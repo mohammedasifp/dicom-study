@@ -1,0 +1,57 @@
+import { extractRuns, scanSuggestions } from '../editor/authorshipMarks.js'
+
+export const DISCLAIMER =
+  'AI-assisted draft. This is not a verified diagnosis. All clinical content must be reviewed and confirmed by a qualified radiologist before use.'
+
+export function buildStructuredReport({ draft, review, fields, editors }) {
+  const sections = {}
+  const scans = {}
+  Object.entries(editors).forEach(([key, editor]) => {
+    sections[key] = editor ? extractRuns(editor.state.doc) : []
+    Object.assign(scans, editor ? scanSuggestions(editor.state.doc) : {})
+  })
+
+  const final = Boolean(review.finalized)
+  return {
+    reportType: final ? 'FINAL_REVIEWED_DRAFT' : 'AI_DRAFT_UNDER_REVIEW',
+    label: final ? 'Final Reviewed Draft' : 'AI Draft (under review)',
+    disclaimer: DISCLAIMER,
+    exportedAt: new Date().toISOString(),
+    draft: { id: draft.draftId, version: draft.version, generatedAt: draft.generatedAt },
+    model: draft.model,
+    patient: draft.patient,
+    study: draft.study,
+    clinicalHistory: fields.clinicalHistory,
+    technique: fields.technique,
+    sections,
+    suggestions: draft.suggestions.map((s) => ({
+      id: s.id,
+      section: s.section,
+      observation: s.observation,
+      confidence: s.confidence,
+      status: review.statuses[s.id],
+      aiText: s.text,
+      finalText: scans[s.id] ? scans[s.id].text : null,
+      limitation: s.limitation || null,
+      source: s.source,
+      roi: s.roi,
+    })),
+    limitations: draft.limitations,
+    review: {
+      status: final ? 'finalized' : 'in_review',
+      reviewer: final ? review.finalized.reviewer : null,
+      finalizedAt: final ? review.finalized.at : null,
+    },
+    auditTrail: review.history,
+  }
+}
+
+export function downloadJson(report) {
+  const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${report.patient.patientId}_${report.study.accessionNumber}_${report.reportType.toLowerCase()}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}
