@@ -1,15 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Box, Button } from '@mui/material'
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
 import { useI18n } from '../i18n/I18nContext.js'
 import { useNotify } from '../hooks/useNotify.js'
 import { errorMessageKey } from '../api/errors.js'
-import { completeReport, getCurrentUser, getReportDraft, reopenReport, startReporting } from '../api/worklistService.js'
+import { finalizeReport, getCurrentUser, getReportDraft, reopenReport, setReviewProgress, startReview } from '../api/worklistService.js'
 import StateMessage from '../components/common/StateMessage.jsx'
 import ReportingWorkspace from './ReportingWorkspace.jsx'
 
-// Opens the existing report editor for a worklist study: claims the study for the current
-// radiologist (when unassigned), loads its draft, and syncs finalize / reopen back to the worklist.
+// Opens the existing report editor for a worklist study: starts the radiologist review (claiming the study when
+// unassigned), loads the AI-generated report (or an empty one when AI failed), and syncs review progress,
+// finalize and reopen back to the worklist. The backend refuses to open a study while AI is still working.
 export default function StudyReportPage({ studyId, onExit }) {
   const { t } = useI18n()
   const notify = useNotify()
@@ -19,7 +20,7 @@ export default function StudyReportPage({ studyId, onExit }) {
   useEffect(() => {
     let cancelled = false
     getCurrentUser()
-      .then((user) => startReporting(studyId, user.id))
+      .then((user) => startReview(studyId, user.id))
       .then(() => getReportDraft(studyId))
       .then((draft) => !cancelled && setState({ studyId, draft, error: null }))
       .catch((error) => !cancelled && setState({ studyId, draft: null, error }))
@@ -28,11 +29,19 @@ export default function StudyReportPage({ studyId, onExit }) {
     }
   }, [studyId, attempt])
 
-  // Keeps the worklist status in step with the editor's finalize / reopen.
-  const sync = (request, successKey) =>
-    request
-      .then(() => notify({ severity: 'success', message: t(successKey) }))
-      .catch((error) => notify({ severity: 'error', message: t('report.syncFailed', { reason: t(errorMessageKey(error)) }) }))
+  // Keeps the worklist review status in step with the editor.
+  const sync = useCallback(
+    (request, successKey) =>
+      request
+        .then(() => successKey && notify({ severity: 'success', message: t(successKey) }))
+        .catch((error) => notify({ severity: 'error', message: t('report.syncFailed', { reason: t(errorMessageKey(error)) }) })),
+    [notify, t],
+  )
+
+  const onReviewedChange = useCallback(
+    (reviewed) => sync(setReviewProgress(studyId, reviewed), reviewed ? 'report.syncedReviewed' : null),
+    [sync, studyId],
+  )
 
   const current = state.studyId === studyId && (state.draft || state.error)
 
@@ -41,11 +50,12 @@ export default function StudyReportPage({ studyId, onExit }) {
   }
 
   if (state.error) {
+    const aiPending = state.error.code === 'AI_REPORT_NOT_READY'
     return (
       <Box sx={{ height: '100%', display: 'grid', placeItems: 'center' }}>
         <StateMessage
-          variant="error"
-          title={state.error.code === 'NOT_FOUND' ? t('report.notFound') : t('report.loadError')}
+          variant={aiPending ? 'empty' : 'error'}
+          title={state.error.code === 'NOT_FOUND' ? t('report.notFound') : aiPending ? t('report.aiPendingTitle') : t('report.loadError')}
           description={t(errorMessageKey(state.error))}
           action={
             <Box sx={{ display: 'flex', gap: 1 }}>
@@ -60,7 +70,7 @@ export default function StudyReportPage({ studyId, onExit }) {
                     setAttempt((n) => n + 1)
                   }}
                 >
-                  {t('common.retry')}
+                  {aiPending ? t('report.checkAgain') : t('common.retry')}
                 </Button>
               )}
             </Box>
@@ -75,7 +85,8 @@ export default function StudyReportPage({ studyId, onExit }) {
       key={studyId}
       draft={state.draft}
       onExit={onExit}
-      onFinalized={(reviewer) => sync(completeReport(studyId, reviewer), 'report.syncedComplete')}
+      onReviewedChange={onReviewedChange}
+      onFinalized={(reviewer) => sync(finalizeReport(studyId, reviewer), 'report.syncedFinalized')}
       onReopened={() => sync(reopenReport(studyId), 'report.syncedReopen')}
     />
   )

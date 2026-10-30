@@ -1,11 +1,12 @@
-import { Box, CircularProgress, Stack, Tooltip, Typography } from '@mui/material'
+import { Box, Tooltip } from '@mui/material'
 import BoltRoundedIcon from '@mui/icons-material/BoltRounded'
 import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded'
-import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded'
+import HourglassEmptyRoundedIcon from '@mui/icons-material/HourglassEmptyRounded'
 import Pill from '../common/Pill.jsx'
 import { useI18n } from '../../i18n/I18nContext.js'
-import { AI_DRAFT_STATUS, PRIORITY } from '../../constants/study.js'
-import { aiDraftColors, brand, colors, priorityColors, radius, statusColors, typography } from '../../styles/tokens.js'
+import { formatDateTime } from '../../i18n/format.js'
+import { AI_READINESS, AI_REPORT_STATUS, PRIORITY } from '../../constants/study.js'
+import { aiReportColors, brand, priorityColors, radius, reviewStatusColors, typography } from '../../styles/tokens.js'
 
 export function PriorityBadge({ priority }) {
   const { t } = useI18n()
@@ -16,12 +17,15 @@ export function PriorityBadge({ priority }) {
   )
 }
 
-export function StatusBadge({ status }) {
+// Radiologist review progress. Independent of the AI report status.
+export function ReviewStatusBadge({ status }) {
   const { t } = useI18n()
   return (
-    <Pill tone={statusColors[status]} title={t(`statusHint.${status}`)}>
-      {t(`status.${status}`)}
-    </Pill>
+    <Tooltip title={t(`reviewStatusHint.${status}`)}>
+      <span>
+        <Pill tone={reviewStatusColors[status]}>{t(`reviewStatus.${status}`)}</Pill>
+      </span>
+    </Tooltip>
   )
 }
 
@@ -53,41 +57,23 @@ export function ModalityBadge({ modality }) {
   )
 }
 
-const AI_ICONS = {
-  [AI_DRAFT_STATUS.READY]: <AutoAwesomeRoundedIcon sx={{ fontSize: 15 }} />,
-  [AI_DRAFT_STATUS.PROCESSING]: <CircularProgress size={11} thickness={6} sx={{ color: aiDraftColors.PROCESSING }} />,
-  [AI_DRAFT_STATUS.FAILED]: <ErrorOutlineRoundedIcon sx={{ fontSize: 15 }} />,
-  [AI_DRAFT_STATUS.NOT_AVAILABLE]: null,
-}
-
-// iconOnly: compact table form; the tooltip carries the full wording.
-export function AiDraftIndicator({ status, iconOnly = false }) {
-  const { t } = useI18n()
-  if (iconOnly) {
-    return (
-      <Tooltip title={`${t(`aiDraft.${status}`)} · ${t(`aiDraftHint.${status}`)}`}>
-        <Box component="span" aria-label={t(`aiDraft.${status}`)} sx={{ display: 'inline-flex', color: aiDraftColors[status], fontSize: typography.size.sm }}>
-          {AI_ICONS[status] || '—'}
-        </Box>
-      </Tooltip>
-    )
-  }
+// The worklist shows only whether the AI report is ready. The tooltip says why it is not
+// (still being generated, or failed so the study is reported manually) and when the status last changed.
+export function AiReportStatusBadge({ study }) {
+  const { t, intlLocale } = useI18n()
+  const status = study.aiReportStatus
+  const ready = status === AI_REPORT_STATUS.READY
+  const hint = [
+    status === AI_REPORT_STATUS.FAILED && study.aiFailureReason ? t(`aiFailure.${study.aiFailureReason}`) : t(`aiReportHint.${status}`),
+    t(`aiReportTime.${status}`, { time: formatDateTime(study.aiReportUpdatedAt, intlLocale) }),
+  ].join(' · ')
   return (
-    <Tooltip title={t(`aiDraftHint.${status}`)}>
-      <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', color: aiDraftColors[status], width: 'fit-content' }}>
-        {AI_ICONS[status]}
-        <Typography
-          component="span"
-          sx={{
-            fontSize: typography.size.xs,
-            fontWeight: status === AI_DRAFT_STATUS.READY ? typography.weight.semibold : typography.weight.regular,
-            color: status === AI_DRAFT_STATUS.NOT_AVAILABLE ? colors.text.muted : 'inherit',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {t(`aiDraft.${status}`)}
-        </Typography>
-      </Stack>
+    <Tooltip title={hint}>
+      <span>
+        <Pill tone={ready ? aiReportColors.READY : aiReportColors.NOT_READY} icon={ready ? <AutoAwesomeRoundedIcon /> : <HourglassEmptyRoundedIcon />}>
+          {t(`aiReport.${ready ? AI_READINESS.READY : AI_READINESS.NOT_READY}`)}
+        </Pill>
+      </span>
     </Tooltip>
   )
 }

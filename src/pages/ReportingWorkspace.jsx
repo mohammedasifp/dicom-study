@@ -43,7 +43,8 @@ function layoutMode(layout) {
 }
 
 // `draft` defaults to the bundled demo draft (#/report); worklist studies pass their own (pages/StudyReportPage.jsx).
-export default function ReportingWorkspace({ draft = draftReport, onExit, onFinalized, onReopened }) {
+// onReviewedChange(reviewed) fires when every AI suggestion gets a decision, or when one is undone again.
+export default function ReportingWorkspace({ draft = draftReport, onExit, onFinalized, onReopened, onReviewedChange }) {
   const initialContent = useMemo(() => buildInitialContent(draft), [draft])
   const suggestions = useMemo(() => draft.suggestions.map((s, i) => ({ ...s, index: i + 1 })), [draft])
   const suggestionInfo = useMemo(() => Object.fromEntries(suggestions.map((s) => [s.id, s])), [suggestions])
@@ -64,6 +65,15 @@ export default function ReportingWorkspace({ draft = draftReport, onExit, onFina
 
   const counts = reviewCounts(review.statuses)
   const readOnly = Boolean(review.finalized)
+  const allDecided = counts.total > 0 && counts.decided === counts.total
+
+  // Reports changes only (not the initial state), so reopening a study keeps its stored review status.
+  const reportedDecided = useRef(allDecided)
+  useEffect(() => {
+    if (readOnly || reportedDecided.current === allDecided) return
+    reportedDecided.current = allDecided
+    onReviewedChange?.(allDecided)
+  }, [allDecided, readOnly, onReviewedChange])
 
   const discarded = suggestions.filter((s) => review.statuses[s.id] === 'discarded').map((s) => ({ suggestion: s, index: s.index }))
 
@@ -186,6 +196,8 @@ export default function ReportingWorkspace({ draft = draftReport, onExit, onFina
           onReopen={() => {
             dispatch({ type: 'reopen' })
             onReopened?.()
+            // Reopening puts the study back under review; re-announce a complete review if there is one.
+            reportedDecided.current = false
           }}
         />
 

@@ -1,9 +1,10 @@
 import { Box, Paper, Stack, Typography } from '@mui/material'
 import { useI18n } from '../../i18n/I18nContext.js'
 import { formatDateTime } from '../../i18n/format.js'
-import { PRIORITY, STUDY_STATUS } from '../../constants/study.js'
+import { PRIORITY } from '../../constants/study.js'
 import { colors, priorityColors, typography } from '../../styles/tokens.js'
-import { AiDraftIndicator, ModalityBadge, PriorityBadge, StatusBadge } from './StudyBadges.jsx'
+import { canOpenReport, isFinalized } from '../../worklist/reviewWorkflow.js'
+import { AiReportStatusBadge, ModalityBadge, PriorityBadge, ReviewStatusBadge } from './StudyBadges.jsx'
 import { AssigneeLabel } from './Assignment.jsx'
 import SlaTimer from './SlaTimer.jsx'
 import StudyActions from './StudyActions.jsx'
@@ -14,18 +15,19 @@ export default function StudyCardList({ studies, now, radiologists, radiologists
   return (
     <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 1, display: 'grid', gap: 1, gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' } }} aria-label={t('worklist.tableLabel')}>
       {studies.map((study) => {
-        const completed = study.status === STUDY_STATUS.COMPLETED
+        const completed = isFinalized(study)
+        const openable = canOpenReport(study)
         return (
           <Paper
             component="li"
             key={study.id}
             tabIndex={0}
-            onClick={() => onOpen(study)}
-            onKeyDown={(e) => e.key === 'Enter' && e.target === e.currentTarget && onOpen(study)}
-            aria-label={t('worklist.openStudy', { patient: study.patient.name, study: study.description })}
+            onClick={() => openable && onOpen(study)}
+            onKeyDown={(e) => openable && e.key === 'Enter' && e.target === e.currentTarget && onOpen(study)}
+            aria-label={t(openable ? 'worklist.openStudy' : 'worklist.awaitingAiStudy', { patient: study.patient.name, study: study.description })}
             sx={{
               p: 1.5,
-              cursor: 'pointer',
+              cursor: openable ? 'pointer' : 'default',
               border: 1,
               borderColor: 'divider',
               borderLeft: `4px solid ${priorityColors[study.priority].bar === 'transparent' ? colors.border.default : priorityColors[study.priority].bar}`,
@@ -56,9 +58,9 @@ export default function StudyCardList({ studies, now, radiologists, radiologists
             </Typography>
 
             <Stack direction="row" sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1, mt: 1 }}>
-              <StatusBadge status={study.status} />
+              <AiReportStatusBadge study={study} />
+              <ReviewStatusBadge status={study.reviewStatus} />
               <SlaTimer study={study} now={now} />
-              <AiDraftIndicator status={study.aiDraftStatus} />
               <Box sx={{ ml: 'auto' }}>
                 <AssigneeLabel radiologist={radiologistsById[study.assignedTo]} isCurrentUser={study.assignedTo === currentUserId} />
               </Box>

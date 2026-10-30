@@ -1,17 +1,18 @@
-import { PRIORITY_RANK, STATUS_RANK, STUDY_STATUS } from '../constants/study.js'
+import { PRIORITY_RANK, REVIEW_RANK } from '../constants/study.js'
 import { slaInfo } from './sla.js'
+import { isAiReportReady, isFinalized } from './reviewWorkflow.js'
 
 export const SORT_DIRECTION = { ASC: 'asc', DESC: 'desc' }
 
-// Default order: open before completed, then priority, then closest to (or furthest past) the SLA target.
+// Default order: open before finalized, then priority, then closest to (or furthest past) the SLA target.
 export const TRIAGE_SORT = { field: 'triage', direction: SORT_DIRECTION.ASC }
 
 const text = (a, b) => a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true })
 const time = (iso) => (iso ? new Date(iso).getTime() : 0)
 
 function triage(a, b, ctx) {
-  const doneA = a.status === STUDY_STATUS.COMPLETED
-  const doneB = b.status === STUDY_STATUS.COMPLETED
+  const doneA = isFinalized(a)
+  const doneB = isFinalized(b)
   if (doneA !== doneB) return doneA ? 1 : -1
   if (doneA) return time(b.reportedAt) - time(a.reportedAt)
   return (
@@ -31,7 +32,8 @@ const COMPARATORS = {
   studyDateTime: (a, b) => time(a.studyDateTime) - time(b.studyDateTime),
   waiting: (a, b, ctx) => slaInfo(a, ctx.now).elapsedMinutes - slaInfo(b, ctx.now).elapsedMinutes,
   referringDoctor: (a, b) => text(a.referringDoctor, b.referringDoctor),
-  status: (a, b) => STATUS_RANK[a.status] - STATUS_RANK[b.status],
+  aiReportStatus: (a, b) => Number(isAiReportReady(b)) - Number(isAiReportReady(a)), // ready first
+  reviewStatus: (a, b) => REVIEW_RANK[a.reviewStatus] - REVIEW_RANK[b.reviewStatus],
   assignedTo: (a, b, ctx) => text(ctx.radiologistName(a.assignedTo), ctx.radiologistName(b.assignedTo)),
 }
 

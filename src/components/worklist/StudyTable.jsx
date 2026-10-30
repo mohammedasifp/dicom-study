@@ -1,28 +1,29 @@
-import { Box, Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel, Tooltip, Typography } from '@mui/material'
+import { Table, TableBody, TableCell, TableHead, TableRow, TableSortLabel, Tooltip, Typography } from '@mui/material'
 import { useI18n } from '../../i18n/I18nContext.js'
 import { formatDate, formatDayMonth, formatTime } from '../../i18n/format.js'
-import { PRIORITY, STUDY_STATUS } from '../../constants/study.js'
+import { PRIORITY } from '../../constants/study.js'
 import { colors, priorityColors, table, typography } from '../../styles/tokens.js'
-import { AiDraftIndicator, ModalityBadge, PriorityBadge, StatusBadge } from './StudyBadges.jsx'
+import { canOpenReport, isFinalized } from '../../worklist/reviewWorkflow.js'
+import { AiReportStatusBadge, ModalityBadge, PriorityBadge, ReviewStatusBadge } from './StudyBadges.jsx'
 import { AssigneeLabel } from './Assignment.jsx'
 import SlaTimer from './SlaTimer.jsx'
 import StudyActions from './StudyActions.jsx'
 
 // Columns fill the available width without horizontal scrolling. Compact columns have a fixed size
 // that fits their content; text-heavy columns share the remaining space by weight (fr) above a minimum.
-// Minimums add up to ~1146px, so the table is used from the `lg` breakpoint and cards below it.
+// Minimums add up to ~1140px, so the table is used from the `lg` breakpoint and cards below it.
+// AI report status and review status are separate columns: they are set by different actors and change independently.
 const COLUMNS = [
-  { id: 'priority', sortField: 'priority', track: '84px' },
-  { id: 'patient', sortField: 'patient', track: 'minmax(141px, 1.4fr)' },
-  { id: 'modality', sortField: 'modality', track: '60px', align: 'center' },
-  { id: 'study', sortField: 'description', track: 'minmax(145px, 1.6fr)' },
-  { id: 'acquired', sortField: 'studyDateTime', track: '80px' },
-  { id: 'waiting', sortField: 'waiting', track: '88px' },
-  { id: 'status', sortField: 'status', track: '124px' },
-  { id: 'assignedTo', sortField: 'assignedTo', track: 'minmax(104px, 1fr)' },
-  { id: 'aiDraft', track: '52px', align: 'center' },
-  { id: 'referringDoctor', sortField: 'referringDoctor', track: 'minmax(84px, 0.9fr)' },
-  { id: 'actions', track: '184px', align: 'right' },
+  { id: 'priority', sortField: 'priority', track: '80px' },
+  { id: 'patient', sortField: 'patient', track: 'minmax(120px, 1.4fr)' },
+  { id: 'modality', sortField: 'modality', track: '58px', align: 'center' },
+  { id: 'study', sortField: 'description', track: 'minmax(120px, 1.6fr)' },
+  { id: 'waiting', sortField: 'waiting', track: '112px' },
+  { id: 'aiReport', sortField: 'aiReportStatus', track: '136px' },
+  { id: 'reviewStatus', sortField: 'reviewStatus', track: '122px' },
+  { id: 'assignedTo', sortField: 'assignedTo', track: 'minmax(100px, 1fr)' },
+  { id: 'referringDoctor', sortField: 'referringDoctor', track: 'minmax(92px, 0.9fr)' },
+  { id: 'actions', track: '200px', align: 'right' },
 ]
 
 // Each row is its own grid with the same template; tracks resolve identically, so columns line up.
@@ -82,23 +83,24 @@ export default function StudyTable({ studies, now, sort, onSortChange, radiologi
             </Typography>
           </>
         )
-      case 'acquired':
-        return (
-          <Tooltip title={`${formatDate(study.studyDateTime, intlLocale)} ${formatTime(study.studyDateTime, intlLocale)}`}>
-            <Box>
-              <Typography sx={{ fontSize: typography.size.sm, lineHeight: 1.35 }}>{formatDayMonth(study.studyDateTime, intlLocale)}</Typography>
-              <Typography sx={secondaryText}>{formatTime(study.studyDateTime, intlLocale)}</Typography>
-            </Box>
-          </Tooltip>
-        )
       case 'waiting':
-        return <SlaTimer study={study} now={now} />
-      case 'status':
-        return <StatusBadge status={study.status} />
+        // Turnaround is measured from acquisition, so the acquisition time sits under the timer.
+        return (
+          <>
+            <SlaTimer study={study} now={now} />
+            <Tooltip title={t('study.acquiredAt', { time: `${formatDate(study.studyDateTime, intlLocale)} ${formatTime(study.studyDateTime, intlLocale)}` })}>
+              <Typography sx={secondaryText}>
+                {formatDayMonth(study.studyDateTime, intlLocale)}, {formatTime(study.studyDateTime, intlLocale)}
+              </Typography>
+            </Tooltip>
+          </>
+        )
+      case 'aiReport':
+        return <AiReportStatusBadge study={study} />
+      case 'reviewStatus':
+        return <ReviewStatusBadge status={study.reviewStatus} />
       case 'assignedTo':
         return <AssigneeLabel radiologist={radiologistsById[study.assignedTo]} isCurrentUser={study.assignedTo === currentUserId} />
-      case 'aiDraft':
-        return <AiDraftIndicator status={study.aiDraftStatus} iconOnly />
       case 'referringDoctor':
         return (
           <Typography sx={{ fontSize: typography.size.sm, ...ellipsis }} title={study.referringDoctor}>
@@ -146,11 +148,15 @@ export default function StudyTable({ studies, now, sort, onSortChange, radiologi
               {col.sortField ? (
                 <TableSortLabel
                   active={sort.field === col.sortField}
+                  hideSortIcon
                   direction={sort.field === col.sortField ? sort.direction : 'asc'}
                   onClick={() => onSortChange(col.sortField)}
                   sx={{
                     color: 'inherit',
                     maxWidth: '100%',
+                    // MUI's sort label inherits flex-direction; the header cell is a column flexbox, so pin it to a row
+                    // to keep the arrow beside the label instead of stacked under it.
+                    flexDirection: 'row',
                     '&:hover, &:focus-visible': { color: table.headerMuted },
                     '&.Mui-active': { color: table.headerText },
                     '& .MuiTableSortLabel-icon': { color: `${table.headerMuted} !important`, mx: 0.25 },
@@ -167,21 +173,23 @@ export default function StudyTable({ studies, now, sort, onSortChange, radiologi
       </TableHead>
       <TableBody component="div" role="rowgroup" sx={{ display: 'block' }}>
         {studies.map((study, index) => {
-          const completed = study.status === STUDY_STATUS.COMPLETED
+          const completed = isFinalized(study)
           const stat = study.priority === PRIORITY.STAT && !completed
+          // Rows open the report only once AI has finished; while it is working the row is informational.
+          const openable = canOpenReport(study)
           return (
             <TableRow
               key={study.id}
               component="div"
               role="row"
               tabIndex={0}
-              onClick={() => onOpen(study)}
-              onKeyDown={(e) => e.key === 'Enter' && e.target === e.currentTarget && onOpen(study)}
-              aria-label={t('worklist.openStudy', { patient: study.patient.name, study: study.description })}
+              onClick={() => openable && onOpen(study)}
+              onKeyDown={(e) => openable && e.key === 'Enter' && e.target === e.currentTarget && onOpen(study)}
+              aria-label={t(openable ? 'worklist.openStudy' : 'worklist.awaitingAiStudy', { patient: study.patient.name, study: study.description })}
               sx={{
                 ...rowGrid,
                 height: table.rowHeight,
-                cursor: 'pointer',
+                cursor: openable ? 'pointer' : 'default',
                 bgcolor: stat ? table.statRowBg : index % 2 ? table.rowStripeBg : table.rowBg,
                 borderBottom: `1px solid ${table.gridLine}`,
                 boxShadow: `inset 4px 0 0 ${priorityColors[study.priority].bar}`,

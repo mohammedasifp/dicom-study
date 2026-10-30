@@ -83,12 +83,11 @@ export const priorityColors = {
   ROUTINE: { fg: colors.neutral.dark, bg: colors.neutral.light, border: colors.neutral.border, bar: 'transparent' },
 }
 
-export const statusColors = {
-  NEW: { fg: colors.info.dark, bg: colors.info.light, border: colors.info.border },
-  ASSIGNED: { fg: brand.deepOceanTeal, bg: brand.mintWhite, border: brand.lightTeal },
-  IN_PROGRESS: { fg: colors.ai.main, bg: colors.ai.light, border: colors.ai.border },
-  PENDING_REPORT: { fg: colors.warning.dark, bg: colors.warning.light, border: colors.warning.border },
-  COMPLETED: { fg: colors.success.dark, bg: colors.success.light, border: colors.success.border },
+export const reviewStatusColors = {
+  PENDING_REVIEW: { fg: colors.info.dark, bg: colors.info.light, border: colors.info.border },
+  UNDER_REVIEW: { fg: colors.warning.dark, bg: colors.warning.light, border: colors.warning.border },
+  REVIEWED: { fg: brand.deepOceanTeal, bg: brand.mintWhite, border: brand.softAqua },
+  FINALIZED: { fg: colors.success.dark, bg: colors.success.light, border: colors.success.border },
 }
 
 export const slaColors = {
@@ -98,9 +97,7 @@ export const slaColors = {
   DONE: colors.text.muted,
 }
 
-export const aiDraftColors = {
-  READY: colors.ai.main,
-  PROCESSING: colors.info.main,
-  FAILED: colors.danger.main,
-  NOT_AVAILABLE: colors.text.muted,
+export const aiReportColors = {
+  READY: { fg: colors.ai.main, bg: colors.ai.light, border: colors.ai.border },
+  NOT_READY: { fg: colors.neutral.dark, bg: colors.neutral.light, border: colors.neutral.border },
 }

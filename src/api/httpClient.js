@@ -57,7 +57,8 @@ export async function apiRequest(path, { method = 'GET', params, body, signal } 
   if (!response.ok) {
     throw new ApiError(data?.message || `Request failed (${response.status})`, {
       status: response.status,
-      code: response.status === 401 ? 'UNAUTHORIZED' : response.status === 404 ? 'NOT_FOUND' : 'HTTP',
+      // Domain errors (e.g. AI_REPORT_NOT_READY) come through as `code` in the response body.
+      code: response.status === 401 ? 'UNAUTHORIZED' : response.status === 404 ? 'NOT_FOUND' : data?.code || 'HTTP',
       details: data,
     })
   }

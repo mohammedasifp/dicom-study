@@ -1,11 +1,11 @@
-import { SLA_AT_RISK_RATIO, SLA_STATE, SLA_TARGET_MINUTES, STUDY_STATUS } from '../constants/study.js'
+import { REVIEW_STATUS, SLA_AT_RISK_RATIO, SLA_STATE, SLA_TARGET_MINUTES } from '../constants/study.js'
 
 const minutesBetween = (fromIso, toMs) => (toMs - new Date(fromIso).getTime()) / 60000
 
-// Turnaround against the priority's target. Completed studies report their final TAT.
+// Turnaround against the priority's target, from acquisition to sign-off. Finalized studies report their final TAT.
 export function slaInfo(study, now) {
   const targetMinutes = SLA_TARGET_MINUTES[study.priority]
-  if (study.status === STUDY_STATUS.COMPLETED) {
+  if (study.reviewStatus === REVIEW_STATUS.FINALIZED) {
     const end = study.reportedAt ? new Date(study.reportedAt).getTime() : now
     const elapsedMinutes = minutesBetween(study.studyDateTime, end)
     return { state: SLA_STATE.DONE, elapsedMinutes, targetMinutes, ratio: elapsedMinutes / targetMinutes, metTarget: elapsedMinutes <= targetMinutes }

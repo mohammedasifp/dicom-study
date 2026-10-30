@@ -1,7 +1,7 @@
 import { Box, Collapse, MenuItem, TextField } from '@mui/material'
 import { useI18n } from '../../i18n/I18nContext.js'
 import MultiSelectField from '../common/MultiSelectField.jsx'
-import { PRIORITIES, STUDY_STATUSES, UNASSIGNED } from '../../constants/study.js'
+import { AI_READINESS_VALUES, PRIORITIES, REVIEW_STATUSES, UNASSIGNED } from '../../constants/study.js'
 import { DATE_RANGE } from '../../worklist/filters.js'
 import { typography } from '../../styles/tokens.js'
 
@@ -24,7 +24,7 @@ export default function AdvancedFilters({ open, filters, onFiltersChange, referr
           display: 'grid',
           gap: 1.5,
           pt: 2,
-          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(5, minmax(0, 1fr))' },
+          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(6, minmax(0, 1fr))' },
         }}
       >
         <MultiSelectField
@@ -36,12 +36,20 @@ export default function AdvancedFilters({ open, filters, onFiltersChange, referr
           options={PRIORITIES.map((p) => ({ value: p, label: t(`priority.${p}`) }))}
         />
         <MultiSelectField
-          id="filter-status"
-          label={t('filters.status')}
+          id="filter-ai-status"
+          label={t('filters.aiStatus')}
           anyLabel={any}
-          value={filters.statuses}
-          onChange={(statuses) => set({ statuses })}
-          options={STUDY_STATUSES.map((s) => ({ value: s, label: t(`status.${s}`) }))}
+          value={filters.aiReadiness}
+          onChange={(aiReadiness) => set({ aiReadiness })}
+          options={AI_READINESS_VALUES.map((v) => ({ value: v, label: t(`aiReport.${v}`) }))}
+        />
+        <MultiSelectField
+          id="filter-review-status"
+          label={t('filters.reviewStatus')}
+          anyLabel={any}
+          value={filters.reviewStatuses}
+          onChange={(reviewStatuses) => set({ reviewStatuses })}
+          options={REVIEW_STATUSES.map((s) => ({ value: s, label: t(`reviewStatus.${s}`) }))}
         />
         <MultiSelectField
           id="filter-referring"

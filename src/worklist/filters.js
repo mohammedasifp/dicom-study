@@ -1,4 +1,5 @@
 import { UNASSIGNED } from '../constants/study.js'
+import { aiReadiness } from './reviewWorkflow.js'
 
 export const DATE_RANGE = { ANY: 'any', TODAY: 'today', LAST_24H: 'last24h', LAST_7D: 'last7d', CUSTOM: 'custom' }
 
@@ -6,7 +7,8 @@ export const EMPTY_FILTERS = {
   search: '',
   modalities: [],
   priorities: [],
-  statuses: [],
+  aiReadiness: [], // AI_READINESS values
+  reviewStatuses: [],
   referringDoctors: [],
   assignees: [], // radiologist ids and/or UNASSIGNED
   dateRange: DATE_RANGE.ANY,
@@ -64,7 +66,8 @@ export function applyFilters(studies, filters, ctx) {
   return studies.filter((s) => {
     if (!inList(filters.modalities, s.modality)) return false
     if (!inList(filters.priorities, s.priority)) return false
-    if (!inList(filters.statuses, s.status)) return false
+    if (!inList(filters.aiReadiness, aiReadiness(s))) return false
+    if (!inList(filters.reviewStatuses, s.reviewStatus)) return false
     if (!inList(filters.referringDoctors, s.referringDoctor)) return false
     if (!inList(filters.assignees, s.assignedTo || UNASSIGNED)) return false
     if (bounds) {
@@ -79,7 +82,8 @@ export function applyFilters(studies, filters, ctx) {
 export function advancedFilterCount(filters) {
   return (
     filters.priorities.length +
-    filters.statuses.length +
+    filters.aiReadiness.length +
+    filters.reviewStatuses.length +
     filters.referringDoctors.length +
     filters.assignees.length +
     (filters.dateRange === DATE_RANGE.ANY ? 0 : 1)

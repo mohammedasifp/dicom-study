@@ -1,6 +1,7 @@
 import { Box, ButtonBase, Typography } from '@mui/material'
 import BoltRoundedIcon from '@mui/icons-material/BoltRounded'
 import AlarmRoundedIcon from '@mui/icons-material/AlarmRounded'
+import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded'
 import AssignmentIndRoundedIcon from '@mui/icons-material/AssignmentIndRounded'
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded'
 import { useI18n } from '../../i18n/I18nContext.js'
@@ -11,13 +12,14 @@ export default function SummaryCards({ stats, activeQueue, onSelectQueue }) {
   const { t } = useI18n()
   const cards = [
     { queue: 'stat', icon: <BoltRoundedIcon />, value: stats.statOpen, label: t('summary.stat'), detail: t('summary.statDetail', { count: stats.statUnassigned }), alert: stats.statOpen > 0, accent: colors.danger.main },
+    { queue: 'aiReady', icon: <AutoAwesomeRoundedIcon />, value: stats.aiReady, label: t('summary.aiReady'), detail: t('summary.aiReadyDetail', { count: stats.aiReadyNotStarted }), accent: colors.ai.main },
     { queue: 'overdue', icon: <AlarmRoundedIcon />, value: stats.overdue, label: t('summary.overdue'), detail: t('summary.overdueDetail'), alert: stats.overdue > 0, accent: colors.danger.main },
     { queue: 'mine', icon: <AssignmentIndRoundedIcon />, value: stats.myOpen, label: t('summary.mine'), detail: t('summary.mineDetail', { count: stats.myOverdue }), accent: brand.oceanTeal },
-    { queue: 'completed', icon: <TaskAltRoundedIcon />, value: stats.completedToday, label: t('summary.completedToday'), detail: t('summary.completedDetail', { count: stats.myCompletedToday }), accent: colors.success.main },
+    { queue: 'finalized', icon: <TaskAltRoundedIcon />, value: stats.finalizedToday, label: t('summary.finalizedToday'), detail: t('summary.finalizedDetail', { count: stats.myFinalizedToday }), accent: colors.success.main },
   ]
 
   return (
-    <Box sx={{ display: 'grid', gap: 1.5, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' } }}>
+    <Box sx={{ display: 'grid', gap: 1.5, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(3, minmax(0, 1fr))', lg: 'repeat(5, minmax(0, 1fr))' } }}>
       {cards.map((card) => {
         const active = activeQueue === card.queue
         return (

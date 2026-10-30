@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { assignStudy, getCurrentUser, listRadiologists, listStudies } from '../api/worklistService.js'
 import { errorMessageKey } from '../api/errors.js'
 import { appConfig } from '../config/appConfig.js'
+import { AI_REPORT_STATUS } from '../constants/study.js'
+import { isAiPending } from '../worklist/reviewWorkflow.js'
 import { useI18n } from '../i18n/I18nContext.js'
 import { useNotify } from './useNotify.js'
 
@@ -15,6 +17,7 @@ export function useWorklist() {
   const [busyIds, setBusyIds] = useState([])
   const requestId = useRef(0)
   const busyRef = useRef(new Set())
+  const previousStudies = useRef(null)
 
   const load = useCallback(
     async ({ background = false, silent = false } = {}) => {
@@ -24,6 +27,8 @@ export function useWorklist() {
       try {
         const [studies, radiologists, currentUser] = await Promise.all([listStudies(), listRadiologists(), getCurrentUser()])
         if (id !== requestId.current) return
+        announceAiReady(previousStudies.current, studies, currentUser, notify, t)
+        previousStudies.current = studies
         setState({ status: 'ready', error: null, studies, radiologists, currentUser })
       } catch (error) {
         if (id !== requestId.current) return
@@ -40,11 +45,16 @@ export function useWorklist() {
   )
 
   useEffect(() => {
-    // Initial fetch, then a silent background poll so new studies appear without user action.
     load()
-    const timer = setInterval(() => load({ background: true, silent: true }), appConfig.worklistRefreshMs)
-    return () => clearInterval(timer)
   }, [load])
+
+  // Silent background poll so new studies and AI status changes appear without user action;
+  // faster while any study is still with the AI service.
+  const aiPending = state.studies.some(isAiPending)
+  useEffect(() => {
+    const timer = setInterval(() => load({ background: true, silent: true }), aiPending ? appConfig.aiStatusRefreshMs : appConfig.worklistRefreshMs)
+    return () => clearInterval(timer)
+  }, [load, aiPending])
 
   const radiologistsById = useMemo(() => Object.fromEntries(state.radiologists.map((r) => [r.id, r])), [state.radiologists])
 
@@ -80,4 +90,21 @@ export function useWorklist() {
     refresh: () => load({ background: state.status === 'ready' }),
     assign,
   }
+}
+
+// Tells the radiologist when AI reports they can pick up (theirs or unassigned) have just become ready.
+function announceAiReady(before, after, currentUser, notify, t) {
+  if (!before || !currentUser) return
+  const wasPending = new Set(before.filter(isAiPending).map((s) => s.id))
+  const ready = after.filter(
+    (s) => wasPending.has(s.id) && s.aiReportStatus === AI_REPORT_STATUS.READY && (!s.assignedTo || s.assignedTo === currentUser.id),
+  )
+  if (!ready.length) return
+  notify({
+    severity: 'info',
+    message:
+      ready.length === 1
+        ? t('aiReport.readyNotice', { patient: ready[0].patient.name, study: ready[0].description })
+        : t('aiReport.readyNoticeMany', { count: ready.length }),
+  })
 }

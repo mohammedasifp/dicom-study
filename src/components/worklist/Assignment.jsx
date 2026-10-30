@@ -5,7 +5,7 @@ import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded'
 import PersonRemoveRoundedIcon from '@mui/icons-material/PersonRemoveRounded'
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded'
 import { useI18n } from '../../i18n/I18nContext.js'
-import { STUDY_STATUS } from '../../constants/study.js'
+import { isFinalized } from '../../worklist/reviewWorkflow.js'
 import { brand, colors, typography } from '../../styles/tokens.js'
 
 export function AssigneeLabel({ radiologist, isCurrentUser }) {
@@ -39,7 +39,7 @@ export function AssigneeLabel({ radiologist, isCurrentUser }) {
 export function AssignMenu({ study, radiologists, currentUserId, busy, onAssign }) {
   const { t } = useI18n()
   const [anchor, setAnchor] = useState(null)
-  const completed = study.status === STUDY_STATUS.COMPLETED
+  const completed = isFinalized(study)
   const choose = (id) => {
     setAnchor(null)
     onAssign(id)

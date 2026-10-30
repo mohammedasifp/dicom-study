@@ -1,8 +1,10 @@
-import { PRIORITY, STUDY_STATUS as S } from '../constants/study.js'
+import { PRIORITY, REVIEW_STATUS as R } from '../constants/study.js'
 import { isOverdue } from './sla.js'
+import { isAiReportReady, isFinalized } from './reviewWorkflow.js'
 
 // Quick-access views. ctx = { userId, now }. Labels: i18n `queues.<id>`, group labels: `queues.groups.<group>`.
-const isOpen = (s) => s.status !== S.COMPLETED
+// The AI and review groups filter on independent statuses, so a study can appear in one of each.
+const isOpen = (s) => !isFinalized(s)
 
 export const QUEUES = [
   { id: 'all', group: 'worklists', match: () => true },
@@ -12,13 +14,15 @@ export const QUEUES = [
   { id: 'stat', group: 'priority', match: (s) => isOpen(s) && s.priority === PRIORITY.STAT, tone: 'danger' },
   { id: 'urgent', group: 'priority', match: (s) => isOpen(s) && s.priority === PRIORITY.URGENT, tone: 'warning' },
   { id: 'routine', group: 'priority', match: (s) => isOpen(s) && s.priority === PRIORITY.ROUTINE },
-  { id: 'new', group: 'status', match: (s) => s.status === S.NEW },
-  { id: 'inProgress', group: 'status', match: (s) => s.status === S.IN_PROGRESS },
-  { id: 'pendingReport', group: 'status', match: (s) => s.status === S.PENDING_REPORT },
-  { id: 'completed', group: 'status', match: (s) => s.status === S.COMPLETED },
+  { id: 'aiReady', group: 'ai', match: (s) => isOpen(s) && isAiReportReady(s) },
+  { id: 'aiNotReady', group: 'ai', match: (s) => isOpen(s) && !isAiReportReady(s) },
+  { id: 'pendingReview', group: 'review', match: (s) => s.reviewStatus === R.PENDING_REVIEW },
+  { id: 'underReview', group: 'review', match: (s) => s.reviewStatus === R.UNDER_REVIEW },
+  { id: 'reviewed', group: 'review', match: (s) => s.reviewStatus === R.REVIEWED },
+  { id: 'finalized', group: 'review', match: (s) => s.reviewStatus === R.FINALIZED },
 ]
 
-export const QUEUE_GROUPS = ['worklists', 'priority', 'status']
+export const QUEUE_GROUPS = ['worklists', 'priority', 'ai', 'review']
 export const DEFAULT_QUEUE = 'all'
 
 const byId = Object.fromEntries(QUEUES.map((q) => [q.id, q]))

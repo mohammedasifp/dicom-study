@@ -4,8 +4,9 @@ export const endpoints = {
   studies: '/api/worklist/studies',
   study: (id) => `/api/worklist/studies/${encodeURIComponent(id)}`,
   assign: (id) => `/api/worklist/studies/${encodeURIComponent(id)}/assignment`,
-  status: (id) => `/api/worklist/studies/${encodeURIComponent(id)}/status`,
-  reportDraft: (id) => `/api/worklist/studies/${encodeURIComponent(id)}/report-draft`,
+  review: (id) => `/api/worklist/studies/${encodeURIComponent(id)}/review`,
+  // AI-generated report (read-only for the UI; produced by the backend AI pipeline).
+  aiReport: (id) => `/api/worklist/studies/${encodeURIComponent(id)}/ai-report`,
   radiologists: '/api/radiologists',
   currentUser: '/api/me',
 }

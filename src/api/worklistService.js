@@ -15,8 +15,11 @@ export const listRadiologists = () => api.listRadiologists()
 export const getCurrentUser = () => api.getCurrentUser()
 /** radiologistId null = unassign. @returns {Promise<import('./models.js').Study>} */
 export const assignStudy = (id, radiologistId) => api.assignStudy(id, radiologistId)
-export const startReporting = (id, userId) => api.startReporting(id, userId)
-export const completeReport = (id, reviewer) => api.completeReport(id, reviewer)
+/** Opens the review (claims the study when unassigned). Fails with code AI_REPORT_NOT_READY while AI is working. */
+export const startReview = (id, userId) => api.startReview(id, userId)
+/** reviewed = every AI finding has a decision (REVIEWED); false moves it back to UNDER_REVIEW. */
+export const setReviewProgress = (id, reviewed) => api.setReviewProgress(id, reviewed)
+export const finalizeReport = (id, reviewer) => api.finalizeReport(id, reviewer)
 export const reopenReport = (id) => api.reopenReport(id)
-/** @returns {Promise<import('./models.js').ReportDraft>} */
+/** Editor input: the AI-generated report when READY, an empty manual report when AI FAILED. @returns {Promise<import('./models.js').ReportDraft>} */
 export const getReportDraft = (id) => api.getReportDraft(id)

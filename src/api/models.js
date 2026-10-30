@@ -4,8 +4,9 @@
 /**
  * @typedef {'CT'|'MR'|'XR'|'US'} Modality
  * @typedef {'STAT'|'URGENT'|'ROUTINE'} Priority
- * @typedef {'NEW'|'ASSIGNED'|'IN_PROGRESS'|'PENDING_REPORT'|'COMPLETED'} StudyStatus
- * @typedef {'READY'|'PROCESSING'|'FAILED'|'NOT_AVAILABLE'} AiDraftStatus
+ * @typedef {'RECEIVED'|'PROCESSING'|'READY'|'FAILED'} AiReportStatus  Set by the backend AI pipeline only
+ * @typedef {'NO_MODEL'|'OUT_OF_SCOPE'|'INCOMPLETE_STUDY'|'PROCESSING_ERROR'} AiFailureReason
+ * @typedef {'PENDING_REVIEW'|'UNDER_REVIEW'|'REVIEWED'|'FINALIZED'} ReviewStatus  Set by radiologist actions only
  *
  * @typedef {Object} Patient
  * @property {string} name
@@ -25,14 +26,16 @@
  * @property {string} studyDateTime  ISO 8601, acquisition time
  * @property {string} referringDoctor
  * @property {Priority} priority
- * @property {StudyStatus} status
  * @property {string|null} assignedTo  Radiologist id
- * @property {AiDraftStatus} aiDraftStatus
+ * @property {AiReportStatus} aiReportStatus
+ * @property {string} aiReportUpdatedAt  ISO 8601, last AI status change
+ * @property {AiFailureReason|null} aiFailureReason  Set when aiReportStatus is FAILED
+ * @property {ReviewStatus} reviewStatus
  * @property {boolean} imagesAvailable  Study has reached PACS
  * @property {number} seriesCount
  * @property {number} instanceCount
  * @property {string} clinicalHistory
- * @property {string|null} reportedAt  ISO 8601
+ * @property {string|null} reportedAt  ISO 8601, when the report was finalized
  *
  * @typedef {Object} Radiologist
  * @property {string} id

@@ -8,7 +8,7 @@ import { MODALITIES } from '../../constants/study.js'
 import { SORT_DIRECTION } from '../../worklist/sorting.js'
 import { brand, colors, typography } from '../../styles/tokens.js'
 
-const MOBILE_SORTS = ['triage', 'waiting', 'studyDateTime', 'patient', 'status']
+const MOBILE_SORTS = ['triage', 'waiting', 'studyDateTime', 'patient', 'aiReportStatus', 'reviewStatus']
 
 // Always-visible controls: search, modality toggles, advanced-filter toggle, clear, result count.
 export default function WorklistToolbar({
