@@ -11,19 +11,19 @@ import StudyActions from './StudyActions.jsx'
 
 // Columns fill the available width without horizontal scrolling. Compact columns have a fixed size
 // that fits their content; text-heavy columns share the remaining space by weight (fr) above a minimum.
-// Minimums add up to ~1198px, so the table is used from layout.worklistTableMinWidth (1280px) and cards below it.
+// Minimums add up to ~1206px, so the table is used from layout.worklistTableMinWidth (1280px) and cards below it.
 // AI report status and review status are separate columns: they are set by different actors and change independently.
 const COLUMNS = [
   { id: 'priority', sortField: 'priority', track: '80px' },
-  { id: 'patient', sortField: 'patient', track: 'minmax(128px, 1.4fr)' },
+  { id: 'patient', sortField: 'patient', track: 'minmax(116px, 1.4fr)' },
   { id: 'modality', sortField: 'modality', track: '88px', align: 'center' },
-  { id: 'study', sortField: 'description', track: 'minmax(140px, 1.6fr)' },
+  { id: 'study', sortField: 'description', track: 'minmax(124px, 1.6fr)' },
   { id: 'waiting', sortField: 'waiting', track: '112px' },
   { id: 'aiReport', sortField: 'aiReportStatus', track: '136px' },
   { id: 'reviewStatus', sortField: 'reviewStatus', track: '122px' },
   { id: 'assignedTo', sortField: 'assignedTo', track: 'minmax(100px, 1fr)' },
   { id: 'referringDoctor', sortField: 'referringDoctor', track: 'minmax(92px, 0.9fr)' },
-  { id: 'actions', track: '200px', align: 'right' },
+  { id: 'actions', track: '236px', align: 'right' },
 ]
 
 // Space between the app bar and the pinned table header while scrolling, in px.

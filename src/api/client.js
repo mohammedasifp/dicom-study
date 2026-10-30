@@ -41,3 +41,18 @@ export async function request(method, path, body) {
   }
   return json.data
 }
+
+// GET a file (e.g. the report PDF) with the same sign-in as request(). Errors arrive as the usual JSON envelope.
+export async function requestFile(path) {
+  const token = readSession()?.token
+  let res
+  try {
+    res = await fetch(path, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+  } catch {
+    throw new ApiError('Cannot reach the report server', { code: 'NETWORK' })
+  }
+  if (res.ok) return res.blob()
+  if (res.status === 401 && token) notifyUnauthorized()
+  const json = await res.json().catch(() => null)
+  throw new ApiError((json && json.message) || `Request failed (${res.status})`, { status: res.status, code: codeFor(res.status), details: json })
+}

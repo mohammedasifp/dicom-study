@@ -210,6 +210,13 @@ const en = {
     openImages: 'Open images in the viewer (new tab)',
     imagesUnavailable: 'Images have not reached PACS yet',
   },
+  reportPdf: {
+    menu: 'Report PDF: view or download',
+    unavailable: 'Report PDF is available once the AI report is generated',
+    view: 'View report',
+    download: 'Download PDF',
+    failed: 'Could not get the report PDF. {{reason}}',
+  },
   actionHint: {
     viewEdit: 'Open the AI-generated report to review and edit it',
     manualReport: 'AI could not generate a report. Open the editor to write it manually',
@@ -244,6 +251,7 @@ const en = {
   ops: {
     nav: { worklist: 'Worklist', operations: 'Operations' },
     title: 'Centre operations',
+    refresh: 'Refresh operations',
     loadError: 'Could not load the operations dashboard',
     failed: 'The change was not saved. {{reason}}',
     stage: { REGISTERED: 'Registered', ACQUIRED: 'Scanned', IN_PACS: 'In PACS', REPORTED: 'Reported', DELIVERED: 'Delivered' },
@@ -335,6 +343,7 @@ const en = {
     },
     feed: {
       title: 'Live activity',
+      live: { zero: 'Live', one: 'Live · 1 event', other: 'Live · {{count}} events' },
       empty: 'No activity yet.',
       CASE_STAGE_CHANGED: '{{patient}}: {{stage}}',
       OPS_EXCEPTION_RAISED: '{{type}} raised for {{patient}}',
@@ -344,8 +353,8 @@ const en = {
       OPS_EXCEPTION_CLEARED: '{{type}} no longer detected',
     },
     summary: {
-      open: 'End-of-day summary',
-      title: 'End-of-day operations summary',
+      open: 'Operations Summary',
+      title: 'Operations Summary',
       generated: 'Since midnight · generated {{time}}',
       raised: 'Exceptions raised',
       resolved: 'Resolved',

@@ -60,9 +60,9 @@ export default function WorklistAppBar({ currentUser, refreshing, onRefresh, onH
 
       <LanguageSwitcher sx={{ '& .MuiInputBase-root': { color: colors.text.inverse, height: 32 }, '& fieldset': { borderColor: brand.oceanTeal } }} />
 
-      <Tooltip title={t('worklist.refresh')}>
+      <Tooltip title={t(section === 'operations' ? 'ops.refresh' : 'worklist.refresh')}>
         <span>
-          <IconButton size="small" onClick={onRefresh} disabled={refreshing} aria-label={t('worklist.refresh')} sx={{ color: brand.lightTeal, border: `1px solid ${brand.oceanTeal}` }}>
+          <IconButton size="small" onClick={onRefresh} disabled={refreshing} aria-label={t(section === 'operations' ? 'ops.refresh' : 'worklist.refresh')} sx={{ color: brand.lightTeal, border: `1px solid ${brand.oceanTeal}` }}>
             {refreshing ? <CircularProgress size={16} sx={{ color: brand.lightTeal }} /> : <RefreshRoundedIcon fontSize="small" />}
           </IconButton>
         </span>

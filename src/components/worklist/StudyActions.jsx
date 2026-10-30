@@ -8,6 +8,8 @@ import { useI18n } from '../../i18n/I18nContext.js'
 import { viewerUrl } from '../../api/pacsService.js'
 import { REPORT_ACTION, reportAction } from '../../worklist/reviewWorkflow.js'
 import { AssignMenu } from './Assignment.jsx'
+import { actionIconSx, actionIconTones } from '../../styles/tokens.js'
+import ReportPdfMenu from './ReportPdfMenu.jsx'
 
 const ACTION_ICONS = {
   [REPORT_ACTION.VIEW_EDIT]: <EditNoteRoundedIcon />,
@@ -16,7 +18,7 @@ const ACTION_ICONS = {
   [REPORT_ACTION.AWAITING_AI]: <HourglassTopRoundedIcon />,
 }
 
-// Row actions: open the report editor, open images in OHIF, assignment menu.
+// Row actions: open the report editor, view / download the report PDF, open images in OHIF, assignment menu.
 // The editor opens only once the AI service has finished; there is deliberately no way to start AI processing here.
 export default function StudyActions({ study, radiologists, currentUserId, busy, onOpen, onAssign, onDelete, fullWidth = false }) {
   const { t } = useI18n()
@@ -44,6 +46,7 @@ export default function StudyActions({ study, radiologists, currentUserId, busy,
           </Button>
         </Stack>
       </Tooltip>
+      <ReportPdfMenu study={study} />
       <Tooltip title={study.imagesAvailable ? t('actions.openImages') : t('actions.imagesUnavailable')}>
         <span>
           <IconButton
@@ -55,7 +58,7 @@ export default function StudyActions({ study, radiologists, currentUserId, busy,
             disabled={!study.imagesAvailable}
             onClick={stop}
             aria-label={t('actions.openImages')}
-            sx={{ border: 1, borderColor: 'divider' }}
+            sx={actionIconSx(actionIconTones.images)}
           >
             <ImageSearchRoundedIcon fontSize="small" />
           </IconButton>

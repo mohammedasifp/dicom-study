@@ -116,3 +116,19 @@ export const aiReportColors = {
   READY: { fg: colors.ai.main, bg: colors.ai.light, border: colors.ai.border },
   NOT_READY: { fg: colors.neutral.dark, bg: colors.neutral.light, border: colors.neutral.border },
 }
+
+// Coloured icon buttons in the worklist Actions column (images viewer, report PDF). Disabled buttons stay grey.
+export const actionIconTones = {
+  images: { fg: brand.oceanTeal, bg: brand.mintWhite, border: brand.softAqua, hoverBg: brand.lightTeal, hoverFg: brand.deepOceanTeal },
+  // Info blue: distinct from the teal images button, and not red (red means danger / error in this app).
+  pdf: { fg: colors.info.dark, bg: colors.info.light, border: colors.info.border, hoverBg: '#E0F2FE', hoverFg: '#075985' },
+}
+
+export const actionIconSx = (tone) => ({
+  color: tone.fg,
+  bgcolor: tone.bg,
+  border: `1px solid ${tone.border}`,
+  transition: 'background-color 120ms, color 120ms, border-color 120ms',
+  '&:hover, &:focus-visible': { bgcolor: tone.hoverBg, color: tone.hoverFg, borderColor: tone.fg },
+  '&.Mui-disabled': { color: colors.text.muted, bgcolor: colors.neutral.light, borderColor: colors.border.default },
+})
