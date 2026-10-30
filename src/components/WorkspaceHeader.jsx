@@ -70,6 +70,7 @@ export default function WorkspaceHeader({
   onFinalize,
   onReopen,
   onRerun,
+  onRollback,
   onSetSla,
 }) {
   const [anchor, setAnchor] = useState(null)
@@ -157,6 +158,20 @@ export default function WorkspaceHeader({
           </ListItemIcon>
           <ListItemText primary="Run AI again…" secondary="Choose a model or add an instruction" />
         </MenuItem>
+        {onRollback && (
+          <MenuItem
+            disabled={Boolean(finalized)}
+            onClick={() => {
+              setModelAnchor(null)
+              onRollback()
+            }}
+          >
+            <ListItemIcon>
+              <HistoryRoundedIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary="Restore previous AI draft" secondary="Swap back to the draft before the last AI run" />
+          </MenuItem>
+        )}
       </Menu>
         </>
       )}

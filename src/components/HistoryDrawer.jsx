@@ -24,6 +24,10 @@ const LABELS = {
   REPORT_EXPORTED: 'Exported',
   SLA_SET: 'Report deadline set',
   REPORT_OVERDUE: 'Report overdue',
+  RADIOLOGIST_ASSIGNED: 'Radiologist assigned',
+  RADIOLOGIST_UNASSIGNED: 'Radiologist unassigned',
+  REPORT_IMAGE_ADDED: 'Image added to the report',
+  AI_ROLLED_BACK: 'Previous AI draft restored',
 }
 
 const NOISY = ['AI_STREAM_CHUNK', 'AI_CHUNK_SENT', 'REPORT_SAVED']
@@ -37,6 +41,9 @@ function detail(event, byId) {
   if (event.tag === 'AI_FAILED') return p.error
   if (event.tag === 'SLA_SET') return `${p.minutes} min, due ${formatDateTime(p.dueAt)}`
   if (event.tag === 'REPORT_FINALISED') return p.reviewer
+  if (event.tag === 'RADIOLOGIST_ASSIGNED') return [p.name, p.assignedBy && `by ${p.assignedBy}`].filter(Boolean).join(' ')
+  if (event.tag === 'REPORT_REOPENED') return [p.reviewer, p.reason].filter(Boolean).join(' · ')
+  if (event.tag === 'AI_ROLLED_BACK') return p.restoredModel && `${p.restoredModel.name || p.restoredModel.id}`
   return null
 }
 

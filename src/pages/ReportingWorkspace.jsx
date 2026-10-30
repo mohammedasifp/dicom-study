@@ -5,8 +5,9 @@ import { initReview, reviewCounts, reviewReducer } from '../report/reviewReducer
 import { buildStructuredReport, downloadJson } from '../report/exportReport.js'
 import { keyImageContent } from '../report/keyImages.js'
 import { getReviewer, setReviewer } from '../report/reviewer.js'
-import { finaliseReport, listEvents, markViewed, reopenReport, setSla } from '../api/backend.js'
+import { finaliseReport, listEvents, markViewed, reopenReport, rollbackAi, setSla } from '../api/backend.js'
 import { buildSavePayload, useBackendSync } from '../hooks/useBackendSync.js'
+import { useImageUploads } from '../hooks/useImageUploads.js'
 import { focusSuggestion, removeSuggestion, restoreSuggestion, revertSuggestion } from '../editor/authorshipMarks.js'
 import WorkspaceHeader from '../components/WorkspaceHeader.jsx'
 import ReportPanel from '../components/ReportPanel.jsx'
@@ -50,7 +51,7 @@ function layoutMode(layout) {
   return 'split'
 }
 
-export default function ReportingWorkspace({ uid, draft, onExit, onRerun, onSlaChange }) {
+export default function ReportingWorkspace({ uid, draft, onExit, onRerun, onSlaChange, onReload }) {
   const initialContent = useMemo(() => buildInitialContent(draft), [draft])
   const suggestions = useMemo(() => draft.suggestions.map((s, i) => ({ ...s, index: i + 1 })), [draft])
   const suggestionInfo = useMemo(() => Object.fromEntries(suggestions.map((s) => [s.id, s])), [suggestions])
@@ -90,6 +91,8 @@ export default function ReportingWorkspace({ uid, draft, onExit, onRerun, onSlaC
     onError: setErrorMessage,
   })
 
+  const uploadImages = useImageUploads({ uid, editor, readOnly, onError: setErrorMessage })
+
   useEffect(() => {
     markViewed(uid, getReviewer()).catch(() => {})
   }, [uid])
@@ -99,8 +102,9 @@ export default function ReportingWorkspace({ uid, draft, onExit, onRerun, onSlaC
     (result) => {
       dispatch({ type: 'scan', result })
       scheduleSave()
+      uploadImages()
     },
-    [scheduleSave],
+    [scheduleSave, uploadImages],
   )
   const onSuggestionFocus = useCallback((id) => dispatch({ type: 'setActive', id }), [])
   const onTransaction = useCallback(() => {
@@ -220,11 +224,20 @@ export default function ReportingWorkspace({ uid, draft, onExit, onRerun, onSlaC
 
   const reopen = async () => {
     try {
-      const result = await reopenReport(uid, { reviewer: getReviewer(), reason: 'Reopened from the reporting screen' })
+      await reopenReport(uid, { reviewer: getReviewer(), reason: 'Reopened from the reporting screen' })
       dispatch({ type: 'reopen' })
-      if (result === null) setErrorMessage('Unlocked on this screen only. The server keeps the report final until reopen is supported.')
     } catch (err) {
       setErrorMessage(`Could not reopen: ${err.message}`)
+    }
+  }
+
+  const rollback = async () => {
+    try {
+      await flush()
+      await rollbackAi(uid, getReviewer())
+      onReload()
+    } catch (err) {
+      setErrorMessage(`Could not restore the previous AI draft: ${err.message}`)
     }
   }
 
@@ -261,6 +274,7 @@ export default function ReportingWorkspace({ uid, draft, onExit, onRerun, onSlaC
           onFinalize={() => setFinalizeOpen(true)}
           onReopen={reopen}
           onRerun={onRerun}
+          onRollback={draft.hasPreviousAi ? rollback : null}
           onSetSla={changeSla}
         />
 

@@ -1,6 +1,13 @@
 export const toIsoDate = (dicomDate) =>
   /^\d{8}$/.test(dicomDate || '') ? `${dicomDate.slice(0, 4)}-${dicomDate.slice(4, 6)}-${dicomDate.slice(6, 8)}` : dicomDate || null
 
+export function toIsoDateTime(dicomDate, dicomTime) {
+  const date = toIsoDate(dicomDate)
+  if (!date || !/^\d{4}/.test(dicomTime || '')) return date
+  const t = dicomTime.padEnd(6, '0')
+  return `${date}T${t.slice(0, 2)}:${t.slice(2, 4)}:${t.slice(4, 6)}`
+}
+
 export function ageAt(birthDate, studyDate) {
   const birth = toIsoDate(birthDate)
   const at = toIsoDate(studyDate)
@@ -27,7 +34,6 @@ function findImage(study, sopInstanceUid) {
         studyInstanceUID: study.studyInstanceUid,
         seriesInstanceUID: series.seriesInstanceUid,
         sopInstanceUID: instance.sopInstanceUid,
-        // BACKEND SPEC (B6): seriesNumber per series; until then the series position stands in.
         seriesNumber: series.seriesNumber ?? index + 1,
         seriesDescription: series.description || series.modality || 'Series',
         instanceNumber: instance.instanceNumber ?? '-',
@@ -40,19 +46,16 @@ function findImage(study, sopInstanceUid) {
 function toSuggestion(s, study, ai) {
   const observation = (ai.observations || []).find((o) => o.id === s.observationId) || {}
   const roi = (ai.rois || []).find((r) => r.observationId === s.observationId)
-  // BACKEND SPEC (B3): every observation carries `source`; today only localisable ones have an ROI to borrow it from.
-  const sourceSop = (observation.source && observation.source.sopInstanceUid) || (roi && roi.sopInstanceUid)
+  const source = s.source || observation.source || {}
+  const sourceSop = source.sopInstanceUid || (roi && roi.sopInstanceUid)
   return {
     id: s.observationId,
-    // BACKEND SPEC (B3): `section`; until then every observation is a finding.
-    section: observation.section || s.section || 'findings',
-    // BACKEND SPEC (B3): `title`; until then the first words of the text.
-    observation: observation.title || s.title || shortTitle(s.aiText),
+    section: s.section || observation.section || 'findings',
+    observation: s.title || observation.title || shortTitle(s.aiText),
     text: s.aiText,
     confidence: typeof s.confidence === 'number' ? s.confidence : null,
-    limitation: observation.limitation || s.limitation || null,
+    limitation: s.limitation || observation.limitation || null,
     source: sourceSop ? findImage(study, sourceSop) : null,
-    // BACKEND SPEC (B4): `shape`, `imageWidth`, `imageHeight`; until then a pixel rect sized against the rendered image.
     roi: roi
       ? { shape: roi.shape || 'rect', units: 'px', x: roi.x, y: roi.y, width: roi.width, height: roi.height, imageWidth: roi.imageWidth, imageHeight: roi.imageHeight }
       : null,
@@ -90,24 +93,22 @@ export function toDraft({ study, report, ai }) {
       accessionNumber: study.accessionNumber || '-',
       description: study.description || [study.modality, study.bodyPart].filter(Boolean).join(' ') || 'Study',
       modality: study.modality || '-',
-      studyDate: toIsoDate(study.studyDate),
-      // BACKEND SPEC (B6): referringPhysician.
+      // BACKEND SPEC (B12): `studyTime`; until then only the study date is known.
+      studyDate: toIsoDateTime(study.studyDate, study.studyTime),
       referringPhysician: study.referringPhysician || '-',
       status: study.status,
       sla: study.sla || null,
     },
-    // BACKEND SPEC (B6): clinicalHistory and technique; until then the sections start empty for the reviewer.
     clinicalHistory: study.clinicalHistory || '',
     technique: study.technique || '',
-    // BACKEND SPEC (B3): impression as observations; until then the AI's single impression string is plain AI text.
     impressionText: hasImpressionPoints ? '' : (report.impression && report.impression.text) || '',
     uncertainty: report.uncertainty || ai.uncertainty || '',
     limitations: report.limitations || ai.limitations || [],
     suggestions,
-    // BACKEND SPEC (B1): `report.body` (editor JSON) once saved; null means build the page from the draft.
     body: report.body || null,
     status: report.status,
     reviewer: report.reviewer || null,
     finalisedAt: report.finalisedAt || null,
+    hasPreviousAi: Boolean(study.previousAi && study.previousAi.completedAt),
   }
 }

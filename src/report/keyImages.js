@@ -36,7 +36,6 @@ export const suggestionCaption = (suggestion) =>
   `Key image: ${sourceLabel(suggestion.source)}${suggestion.roi ? ' (marked region)' : ''}`
 
 export function keyImageContent(image) {
-  // BACKEND SPEC (B7): upload `image.src` to POST /api/studies/:uid/report/images and store the returned url instead of the data URL.
   return [
     { type: 'image', attrs: { src: image.src, alt: image.caption, width: 300 } },
     { type: 'paragraph', content: [{ type: 'text', text: image.caption, marks: [{ type: 'italic' }] }] },

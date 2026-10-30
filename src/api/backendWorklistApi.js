@@ -1,7 +1,13 @@
-import { listStudies as listBackendStudies, getStudy as getBackendStudy } from './backend.js'
-import { ageAt, toIsoDate } from './adapter.js'
-import { mockCurrentUserId, mockRadiologists } from '../data/mock/radiologists.js'
-import { applyAssignment, applyStartReporting } from '../worklist/statusTransitions.js'
+import {
+  assignRadiologist,
+  getCurrentRadiologist,
+  getStudy as getBackendStudy,
+  listRadiologists as listBackendRadiologists,
+  listStudies as listBackendStudies,
+} from './backend.js'
+import { ageAt, toIsoDateTime } from './adapter.js'
+import { readSession } from '../auth/session.js'
+import { applyAssignment } from '../worklist/statusTransitions.js'
 import { AI_DRAFT_STATUS as AI, PRIORITY, STUDY_STATUS as S } from '../constants/study.js'
 
 // Worklist data from dicom-study-backend (`GET /api/studies`). Same method signatures as httpWorklistApi.js.
@@ -16,9 +22,7 @@ const STATUS = {
 
 const SEX = { M: 'M', F: 'F', O: 'O' }
 
-// BACKEND SPEC (B9): assignment lives in the browser session until the backend stores `assignedTo`
-// (PUT /api/studies/:uid/assignment { radiologistId }) and returns it on each study.
-const assignments = new Map()
+const toRadiologist = (r) => ({ id: r.id || String(r._id), name: r.name, initials: r.initials || '', subspecialty: r.subspecialty || '' })
 
 function toWorklistStudy(s) {
   const patient = s.patient || {}
@@ -35,12 +39,12 @@ function toWorklistStudy(s) {
       age: ageAt(patient.birthDate, s.studyDate),
       sex: SEX[patient.sex] || 'O',
     },
-    // BACKEND SPEC (B11): patientClass, priority, description, referringDoctor, clinicalHistory and reportedAt on the study summary.
     patientClass: s.patientClass || 'OP',
     modality: s.modality === 'CR' || s.modality === 'DX' ? 'XR' : s.modality,
     description: s.description || [s.modality, s.bodyPart].filter(Boolean).join(' '),
     bodyPart: s.bodyPart || '',
-    studyDateTime: toIsoDate(s.studyDate) || s.updatedAt,
+    // BACKEND SPEC (B12): `studyTime` on the summary; until then the scan shows at midnight of the study date.
+    studyDateTime: toIsoDateTime(s.studyDate, s.studyTime) || s.updatedAt,
     referringDoctor: s.referringPhysician || '-',
     priority: s.priority || PRIORITY.ROUTINE,
     status,
@@ -50,24 +54,26 @@ function toWorklistStudy(s) {
     seriesCount: s.seriesCount || 0,
     instanceCount: s.instanceCount || 0,
     clinicalHistory: s.clinicalHistory || '',
-    reportedAt: s.status === 'REPORTED' ? s.reportedAt || s.updatedAt : null,
+    reportedAt: s.reportedAt || null,
   }
-  const assigned = assignments.get(study.id)
-  return assigned ? applyAssignment(study, assigned) : study
+  return s.assignedTo ? applyAssignment(study, s.assignedTo) : study
+}
+
+const sessionUser = () => {
+  const session = readSession()
+  return session && session.user
 }
 
 export const backendWorklistApi = {
   listStudies: async () => (await listBackendStudies()).map(toWorklistStudy),
   getStudy: async (id) => toWorklistStudy(await getBackendStudy(id)),
-  // BACKEND SPEC (B10): GET /api/radiologists and GET /api/me; the mock list stands in until then.
-  listRadiologists: async () => mockRadiologists,
-  getCurrentUser: async () => mockRadiologists.find((r) => r.id === mockCurrentUserId),
+  listRadiologists: async () => (await listBackendRadiologists()).map(toRadiologist),
+  getCurrentUser: async () => sessionUser() || toRadiologist(await getCurrentRadiologist()),
   assignStudy: async (id, radiologistId) => {
-    if (radiologistId) assignments.set(id, radiologistId)
-    else assignments.delete(id)
-    return backendWorklistApi.getStudy(id)
+    const user = sessionUser()
+    return toWorklistStudy(await assignRadiologist(id, radiologistId || null, user && user.name))
   },
-  startReporting: async (id, userId) => applyStartReporting(await backendWorklistApi.getStudy(id), userId),
+  startReporting: (id) => backendWorklistApi.getStudy(id),
   completeReport: (id) => backendWorklistApi.getStudy(id),
   reopenReport: (id) => backendWorklistApi.getStudy(id),
   getReportDraft: async () => {

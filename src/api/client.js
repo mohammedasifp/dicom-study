@@ -1,3 +1,5 @@
+import { readSession } from '../auth/session.js'
+
 export class ApiError extends Error {
   constructor(message, status) {
     super(message)
@@ -5,12 +7,24 @@ export class ApiError extends Error {
   }
 }
 
+const OBJECT_ID = /^[a-f0-9]{24}$/i
+
+function headersFor(body) {
+  const headers = {}
+  if (body !== undefined) headers['Content-Type'] = 'application/json'
+  const session = readSession()
+  const userId = session && session.user && session.user.id
+  if (userId && OBJECT_ID.test(userId)) headers['X-User-Id'] = userId
+  if (session && session.token) headers.Authorization = `Bearer ${session.token}`
+  return headers
+}
+
 export async function request(method, path, body) {
   let res
   try {
     res = await fetch(path, {
       method,
-      headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
+      headers: headersFor(body),
       body: body === undefined ? undefined : JSON.stringify(body),
     })
   } catch {

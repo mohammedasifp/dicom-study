@@ -117,6 +117,10 @@ export default function ReportingScreen({ uid, onExit }) {
           onExit={onExit}
           onRerun={() => setRerunOpen(true)}
           onSlaChange={(sla) => setState((s) => ({ ...s, draft: { ...s.draft, study: { ...s.draft.study, sla } } }))}
+          onReload={() => {
+            setNotice('Previous AI draft restored.')
+            load().then(() => setReloadKey((n) => n + 1))
+          }}
         />
         {rerun}
         {toast}
