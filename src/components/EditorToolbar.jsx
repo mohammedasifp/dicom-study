@@ -12,6 +12,25 @@ import FormatListNumberedRoundedIcon from '@mui/icons-material/FormatListNumbere
 import UndoRoundedIcon from '@mui/icons-material/UndoRounded'
 import RedoRoundedIcon from '@mui/icons-material/RedoRounded'
 import { authorColors } from '../theme.js'
+import { extractReport } from '../editor/authorshipMarks.js'
+import { measureAuthorship } from '../report/exportReport.js'
+
+function AuthorshipShare({ editor }) {
+  const aiPercent = useEditorState({
+    editor,
+    selector: ({ editor: e }) => (e ? (measureAuthorship(extractReport(e.state.doc)) || {}).aiPercent ?? null : null),
+  })
+  if (aiPercent === null || aiPercent === undefined) return null
+  return (
+    <Tooltip title="Share of the report text, by word count. Shown live only, not in the saved PDF.">
+      <Typography sx={{ ml: 1, fontSize: '0.72rem', fontWeight: 650, color: 'text.secondary', whiteSpace: 'nowrap' }}>
+        <Box component="span" sx={{ color: authorColors.ai.main }}>AI {Math.round(aiPercent)}%</Box>
+        {' · '}
+        <Box component="span" sx={{ color: authorColors.reviewer.main }}>You {Math.round(100 - aiPercent)}%</Box>
+      </Typography>
+    </Tooltip>
+  )
+}
 
 function AuthorshipToggle({ on, onToggle }) {
   return (
@@ -150,6 +169,7 @@ export default function EditorToolbar({ editor, disabled, showAuthorship, onTogg
       )}
       <Divider orientation="vertical" flexItem sx={{ mx: 0.75, my: 1.25 }} />
       <AuthorshipToggle on={showAuthorship} onToggle={onToggleAuthorship} />
+      <AuthorshipShare editor={editor} />
       <Box sx={{ flex: 1, minWidth: 8 }} />
       {children}
     </Stack>

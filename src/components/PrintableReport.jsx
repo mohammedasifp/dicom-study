@@ -23,7 +23,7 @@ const css = `
 }
 `
 
-function Runs({ runs, refIndex }) {
+function Runs({ runs, refIndex, plain }) {
   return runs.map((run, i) => {
     let content = run.text
     if (run.bold) content = <strong>{content}</strong>
@@ -31,14 +31,14 @@ function Runs({ runs, refIndex }) {
     if (run.underline) content = <u>{content}</u>
     return (
       <span key={i}>
-        <span className={run.author}>{content}</span>
-        {run.author === 'ai' && <sup>[{refIndex[run.suggestionId]}]</sup>}
+        <span className={plain ? undefined : run.author}>{content}</span>
+        {!plain && run.author === 'ai' && <sup>[{refIndex[run.suggestionId]}]</sup>}
       </span>
     )
   })
 }
 
-function Blocks({ blocks, refIndex }) {
+function Blocks({ blocks, refIndex, plain }) {
   const out = []
   let list = []
   const flush = () => {
@@ -49,7 +49,7 @@ function Blocks({ blocks, refIndex }) {
     if (block.kind === 'listItem') {
       list.push(
         <li key={i}>
-          <Runs runs={block.runs} refIndex={refIndex} />
+          <Runs runs={block.runs} refIndex={refIndex} plain={plain} />
         </li>,
       )
       return
@@ -72,7 +72,7 @@ function Blocks({ blocks, refIndex }) {
     } else {
       out.push(
         <p key={i}>
-          <Runs runs={block.runs} refIndex={refIndex} />
+          <Runs runs={block.runs} refIndex={refIndex} plain={plain} />
         </p>,
       )
     }
@@ -98,19 +98,18 @@ export default function PrintableReport({ report }) {
                 <h1>{report.study.description}</h1>
                 <div style={{ color: '#5b6478', fontSize: '9pt' }}>Radiology report · {report.study.modality}</div>
               </td>
+              {!final && (
               <td style={{ border: 0, padding: 0, textAlign: 'right' }}>
-                <span
-                  className="badge"
-                  style={final ? { background: '#e6f4ec', color: '#1f8a4c' } : { background: '#fff4e0', color: '#b26a00' }}
-                >
+                <span className="badge" style={{ background: '#fff4e0', color: '#b26a00' }}>
                   {report.label}
                 </span>
               </td>
+              )}
             </tr>
           </tbody>
         </table>
 
-        <p className="disclaimer">{report.disclaimer}</p>
+        {!final && <p className="disclaimer">{report.disclaimer}</p>}
 
         <table>
           <tbody>
@@ -132,7 +131,7 @@ export default function PrintableReport({ report }) {
               <th>Referred by</th>
               <td>{report.study.referringPhysician}</td>
             </tr>
-            {report.model && (
+            {report.model && !final && (
             <tr>
               <th>AI model</th>
               <td colSpan={3}>
@@ -145,19 +144,21 @@ export default function PrintableReport({ report }) {
           </tbody>
         </table>
 
+        {!final && (
         <p style={{ marginTop: '6pt', fontSize: '8.5pt', color: '#5b6478' }}>
           Legend: <span className="ai">AI-generated text</span>
           <sup>[n]</sup> links to image reference n · <span className="reviewer">Reviewer-written text</span>
         </p>
+        )}
 
         {report.sections.map((section, i) => (
           <div key={`${section.title}-${i}`}>
             {section.title && <h2>{section.title}</h2>}
-            <Blocks blocks={section.blocks} refIndex={refIndex} />
+            <Blocks blocks={section.blocks} refIndex={refIndex} plain={final} />
           </div>
         ))}
 
-        {report.suggestions.length > 0 && (
+        {report.suggestions.length > 0 && !final && (
         <>
         <h2>Image references &amp; AI suggestion review</h2>
         <table>
@@ -200,6 +201,7 @@ export default function PrintableReport({ report }) {
             ? `Reviewed and finalized by ${report.review.reviewer} on ${formatDateTime(report.review.finalizedAt)}.`
             : 'Not yet reviewed. This document must not be used for clinical decisions.'}
         </p>
+        {final && <p style={{ fontSize: '8pt', color: '#5b6478' }}>{report.disclaimer}</p>}
         <p style={{ fontSize: '8pt', color: '#5b6478' }}>
           Exported {formatDateTime(report.exportedAt)} · Draft {report.draft.id} v{report.draft.version} · Study UID{' '}
           {report.study.studyInstanceUID}

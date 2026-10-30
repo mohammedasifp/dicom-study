@@ -6,7 +6,7 @@ import {
   listRadiologists as listBackendRadiologists,
   listStudies as listBackendStudies,
 } from './backend.js'
-import { ageAt, toIsoDateTime } from './adapter.js'
+import { patientIdentity, toIsoDateTime } from './adapter.js'
 import { applyAssignment } from '../worklist/reviewWorkflow.js'
 import { AI_FAILURE_REASON, AI_REPORT_STATUS as AI, PRIORITY, REVIEW_STATUS as R } from '../constants/study.js'
 
@@ -39,9 +39,8 @@ function toWorklistStudy(s) {
     studyInstanceUID: s.studyInstanceUid,
     accessionNumber: s.accessionNumber || '-',
     patient: {
-      name: (patient.name || 'Unknown').replace(/\^/g, ' ').trim(),
+      ...patientIdentity(patient, s.studyDate),
       uhid: patient.patientId || '-',
-      age: ageAt(patient.birthDate, s.studyDate),
       sex: SEX[patient.sex] || 'O',
     },
     patientClass: s.patientClass || 'OP',
