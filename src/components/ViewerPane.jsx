@@ -8,15 +8,7 @@ import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
 import { chrome } from '../theme.js'
 import { sourceLabel } from '../report/format.js'
 import { captureViewport, setKeyImageDrag } from '../report/keyImages.js'
-
-function viewerUrl(studyInstanceUID, target) {
-  const params = new URLSearchParams({ StudyInstanceUIDs: studyInstanceUID })
-  if (target) {
-    params.set('initialSeriesInstanceUID', target.seriesInstanceUID)
-    params.set('initialSOPInstanceUID', target.sopInstanceUID)
-  }
-  return `/ohif/viewer?${params.toString()}`
-}
+import { checkStudyOnPacs, viewerUrl } from '../api/pacsService.js'
 
 function KeyImageTray({ images, onInsert, onRemove }) {
   return (
@@ -78,14 +70,9 @@ export default function ViewerPane({ study, target, keyImages, onCapture, onInse
   const iframeRef = useRef(null)
 
   useEffect(() => {
-    let cancelled = false
-    fetch(`/dicom-web/studies?StudyInstanceUID=${study.studyInstanceUID}`)
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
-      .then((rows) => !cancelled && setStatus(Array.isArray(rows) && rows.length ? 'ready' : 'missing'))
-      .catch(() => !cancelled && setStatus('offline'))
-    return () => {
-      cancelled = true
-    }
+    const controller = new AbortController()
+    checkStudyOnPacs(study.studyInstanceUID, controller.signal).then((result) => result && setStatus(result))
+    return () => controller.abort()
   }, [study.studyInstanceUID, attempt])
 
   const src = viewerUrl(study.studyInstanceUID, target)

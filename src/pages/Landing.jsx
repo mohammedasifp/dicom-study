@@ -1,8 +1,11 @@
 import { Box, Button, Stack, Typography } from '@mui/material'
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded'
 import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded'
+import { useI18n } from '../i18n/I18nContext.js'
+import { brand } from '../styles/tokens.js'
 
 export default function Landing({ onStart }) {
+  const { t } = useI18n()
   return (
     <Box
       sx={{
@@ -11,7 +14,7 @@ export default function Landing({ onStart }) {
         placeItems: 'center',
         px: 3,
         background:
-          'radial-gradient(1200px 600px at 50% -10%, #dfe8fb 0%, rgba(223,232,251,0) 60%), #f3f5f9',
+          `radial-gradient(1200px 600px at 50% -10%, ${brand.lightTeal} 0%, rgba(153,246,228,0) 60%), ${brand.mintWhite}`,
       }}
     >
       <Stack spacing={3} sx={{ alignItems: 'center', textAlign: 'center', maxWidth: 520 }}>
@@ -23,18 +26,18 @@ export default function Landing({ onStart }) {
             display: 'grid',
             placeItems: 'center',
             color: '#fff',
-            background: 'linear-gradient(135deg, #1d5fd1, #6d4bd8)',
-            boxShadow: '0 10px 30px rgba(29,95,209,0.25)',
+            background: `linear-gradient(135deg, ${brand.oceanTeal}, ${brand.deepOceanTeal})`,
+            boxShadow: '0 10px 30px rgba(6,78,74,0.25)',
           }}
         >
           <AutoAwesomeRoundedIcon />
         </Box>
         <Stack spacing={1}>
           <Typography variant="h1" sx={{ fontSize: '2rem', letterSpacing: '-0.02em' }}>
-            Radiology Report Co-Pilot
+            {t('landing.title')}
           </Typography>
           <Typography color="text.secondary" sx={{ fontSize: '1rem' }}>
-            Review the AI-prepared draft next to the images, then sign off your own report.
+            {t('landing.subtitle')}
           </Typography>
         </Stack>
         <Button
@@ -44,10 +47,10 @@ export default function Landing({ onStart }) {
           onClick={onStart}
           sx={{ px: 4, py: 1.4, fontSize: '1rem', borderRadius: 2.5 }}
         >
-          Start Reporting
+          {t('landing.cta')}
         </Button>
         <Typography variant="caption" color="text.secondary">
-          AI output is a draft for clinician review and is not a diagnosis.
+          {t('landing.disclaimer')}
         </Typography>
       </Stack>
     </Box>

@@ -1,4 +1,5 @@
 import { createTheme } from '@mui/material/styles'
+import { breakpoints, colors, radius, shadows, typography } from './styles/tokens.js'
 
 export const authorColors = {
   ai: { main: '#7c3aed', bar: '#8b5cf6', tint: '#f5f3ff', soft: '#c4b5fd' },
@@ -14,21 +15,23 @@ export const chrome = {
 }
 
 export const theme = createTheme({
+  breakpoints: { values: breakpoints },
   palette: {
     mode: 'light',
-    primary: { main: '#2563eb', dark: '#1d4ed8', light: '#eff6ff' },
+    primary: colors.primary,
     secondary: { main: authorColors.ai.main },
-    success: { main: '#16a34a', dark: '#15803d', light: '#f0fdf4' },
-    warning: { main: '#d97706', light: '#fffbeb' },
-    error: { main: '#dc2626', light: '#fef2f2' },
-    background: { default: '#eef1f6', paper: '#ffffff' },
-    text: { primary: '#0f172a', secondary: '#64748b' },
-    divider: '#e2e8f0',
+    success: { main: colors.success.main, dark: colors.success.dark, light: colors.success.light },
+    warning: { main: colors.warning.main, light: colors.warning.light },
+    error: { main: colors.danger.main, light: colors.danger.light },
+    info: { main: colors.info.main, light: colors.info.light },
+    background: { default: colors.background.app, paper: colors.background.paper },
+    text: { primary: colors.text.primary, secondary: colors.text.secondary },
+    divider: colors.border.default,
   },
-  shape: { borderRadius: 8 },
+  shape: { borderRadius: radius.md },
   typography: {
-    fontFamily: '"Inter Variable", "Segoe UI", system-ui, -apple-system, sans-serif',
-    fontSize: 13,
+    fontFamily: typography.fontFamily,
+    fontSize: typography.baseFontSize,
     h1: { fontWeight: 700 },
     h6: { fontWeight: 650, fontSize: '0.95rem' },
     subtitle2: { fontWeight: 600 },
@@ -38,17 +41,17 @@ export const theme = createTheme({
   components: {
     MuiButton: {
       defaultProps: { disableElevation: true },
-      styleOverrides: { sizeSmall: { height: 32, borderRadius: 8, paddingInline: 12 } },
+      styleOverrides: { sizeSmall: { height: 32, borderRadius: radius.md, paddingInline: 12 } },
     },
-    MuiIconButton: { styleOverrides: { sizeSmall: { width: 32, height: 32, borderRadius: 8 } } },
+    MuiIconButton: { styleOverrides: { sizeSmall: { width: 32, height: 32, borderRadius: radius.md } } },
     MuiPaper: { defaultProps: { elevation: 0 } },
     MuiChip: { styleOverrides: { root: { fontWeight: 600 } } },
     MuiTooltip: {
       defaultProps: { arrow: true, enterDelay: 300 },
-      styleOverrides: { tooltip: { fontSize: '0.72rem', backgroundColor: '#1e293b' }, arrow: { color: '#1e293b' } },
+      styleOverrides: { tooltip: { fontSize: '0.72rem', backgroundColor: colors.text.primary }, arrow: { color: colors.text.primary } },
     },
     MuiMenu: {
-      styleOverrides: { paper: { boxShadow: '0 12px 32px rgba(15,23,42,0.16)', border: '1px solid #e2e8f0' } },
+      styleOverrides: { paper: { boxShadow: shadows.menu, border: `1px solid ${colors.border.default}` } },
     },
   },
 })

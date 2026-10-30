@@ -23,7 +23,9 @@ export function initReview(draft) {
         'AI',
         'Draft generated',
         null,
-        `${draft.model.name} v${draft.model.version} (${draft.model.zoo}) · ${draft.suggestions.length} suggestions`,
+        draft.model
+          ? `${draft.model.name} v${draft.model.version} (${draft.model.zoo}) · ${draft.suggestions.length} suggestions`
+          : 'No AI draft for this study · manual report',
       ),
     ],
     finalized: null,

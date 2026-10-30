@@ -132,6 +132,7 @@ export default function PrintableReport({ report }) {
               <th>Referred by</th>
               <td>{report.study.referringPhysician}</td>
             </tr>
+            {report.model && (
             <tr>
               <th>AI model</th>
               <td colSpan={3}>
@@ -140,6 +141,7 @@ export default function PrintableReport({ report }) {
               <th>Draft generated</th>
               <td>{formatDateTime(report.draft.generatedAt)}</td>
             </tr>
+            )}
           </tbody>
         </table>
 
@@ -155,6 +157,8 @@ export default function PrintableReport({ report }) {
           </div>
         ))}
 
+        {report.suggestions.length > 0 && (
+        <>
         <h2>Image references &amp; AI suggestion review</h2>
         <table>
           <thead>
@@ -187,6 +191,8 @@ export default function PrintableReport({ report }) {
             <li key={l}>{l}</li>
           ))}
         </ul>
+        </>
+        )}
 
         <h2>Review</h2>
         <p>

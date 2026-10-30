@@ -42,8 +42,8 @@ function layoutMode(layout) {
   return 'split'
 }
 
-export default function ReportingWorkspace({ onExit }) {
-  const draft = draftReport
+// `draft` defaults to the bundled demo draft (#/report); worklist studies pass their own (pages/StudyReportPage.jsx).
+export default function ReportingWorkspace({ draft = draftReport, onExit, onFinalized, onReopened }) {
   const initialContent = useMemo(() => buildInitialContent(draft), [draft])
   const suggestions = useMemo(() => draft.suggestions.map((s, i) => ({ ...s, index: i + 1 })), [draft])
   const suggestionInfo = useMemo(() => Object.fromEntries(suggestions.map((s) => [s.id, s])), [suggestions])
@@ -183,7 +183,10 @@ export default function ReportingWorkspace({ onExit }) {
           onExportJson={() => downloadJson(buildReport())}
           onExportPdf={() => setPrintReport(buildReport())}
           onFinalize={() => setFinalizeOpen(true)}
-          onReopen={() => dispatch({ type: 'reopen' })}
+          onReopen={() => {
+            dispatch({ type: 'reopen' })
+            onReopened?.()
+          }}
         />
 
         <Box sx={{ flex: 1, minHeight: 0 }}>
@@ -248,6 +251,7 @@ export default function ReportingWorkspace({ onExit }) {
         onConfirm={(reviewer) => {
           dispatch({ type: 'finalize', reviewer })
           setFinalizeOpen(false)
+          onFinalized?.(reviewer)
         }}
       />
       <HistoryDrawer open={historyOpen} onClose={() => setHistoryOpen(false)} history={review.history} suggestions={draft.suggestions} />

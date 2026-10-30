@@ -79,7 +79,7 @@ export default function WorkspaceHeader({
       spacing={2}
       sx={{ alignItems: 'center', px: 1.5, height: 56, bgcolor: chrome.bg, borderBottom: `1px solid ${chrome.border}`, flexShrink: 0 }}
     >
-      <Tooltip title="Back to start">
+      <Tooltip title="Back to worklist">
         <IconButton size="small" onClick={onBack} sx={{ color: chrome.muted }}>
           <ArrowBackRoundedIcon fontSize="small" />
         </IconButton>
@@ -93,6 +93,7 @@ export default function WorkspaceHeader({
         sx={{ flexShrink: 1 }}
       />
 
+      {model && (
       <Tooltip
         title={
           <>
@@ -120,6 +121,7 @@ export default function WorkspaceHeader({
           </Typography>
         </Stack>
       </Tooltip>
+      )}
 
       <Box sx={{ flex: 1 }} />
 

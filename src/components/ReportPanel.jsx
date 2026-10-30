@@ -206,6 +206,7 @@ export default function ReportPanel({
         <Typography noWrap sx={{ fontSize: '0.7rem', color: '#78350f', flex: 1 }} title={DISCLAIMER}>
           {DISCLAIMER_SHORT}
         </Typography>
+        {model && (
         <FooterButton icon={<InfoOutlinedIcon sx={{ fontSize: 15 }} />} label="AI model notes">
           <Typography sx={popTitle}>
             {model.name} v{model.version} · {model.zoo}
@@ -222,6 +223,7 @@ export default function ReportPanel({
             ))}
           </Box>
         </FooterButton>
+        )}
         {!readOnly && (
           <FooterButton icon={<KeyboardOutlinedIcon sx={{ fontSize: 15 }} />} label="Shortcuts">
             <Typography sx={popTitle}>KEYBOARD SHORTCUTS</Typography>

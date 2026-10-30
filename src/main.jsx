@@ -4,13 +4,19 @@ import { CssBaseline, ThemeProvider } from '@mui/material'
 import '@fontsource-variable/inter'
 import { theme } from './theme.js'
 import './index.css'
+import I18nProvider from './i18n/I18nProvider.jsx'
+import NotificationProvider from './components/common/NotificationProvider.jsx'
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <App />
+      <I18nProvider>
+        <NotificationProvider>
+          <App />
+        </NotificationProvider>
+      </I18nProvider>
     </ThemeProvider>
   </StrictMode>,
 )
