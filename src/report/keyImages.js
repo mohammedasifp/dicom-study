@@ -1,4 +1,4 @@
-import { sourceLabel, wadoUrl } from './format.js'
+import { roiFraction, sourceLabel, wadoUrl } from './format.js'
 
 const loadImage = (src) =>
   new Promise((resolve, reject) => {
@@ -8,8 +8,9 @@ const loadImage = (src) =>
     img.src = src
   })
 
-export async function composeRoiImage(source, roi) {
+export async function composeRoiImage(source, rawRoi) {
   const img = await loadImage(wadoUrl(source))
+  const roi = roiFraction(rawRoi, img.naturalWidth, img.naturalHeight)
   const canvas = document.createElement('canvas')
   canvas.width = img.naturalWidth
   canvas.height = img.naturalHeight
@@ -35,6 +36,7 @@ export const suggestionCaption = (suggestion) =>
   `Key image: ${sourceLabel(suggestion.source)}${suggestion.roi ? ' (marked region)' : ''}`
 
 export function keyImageContent(image) {
+  // BACKEND SPEC (B7): upload `image.src` to POST /api/studies/:uid/report/images and store the returned url instead of the data URL.
   return [
     { type: 'image', attrs: { src: image.src, alt: image.caption, width: 300 } },
     { type: 'paragraph', content: [{ type: 'text', text: image.caption, marks: [{ type: 'italic' }] }] },

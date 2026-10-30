@@ -9,11 +9,11 @@ import EditNoteRoundedIcon from '@mui/icons-material/EditNoteRounded'
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded'
 import DragIndicatorRoundedIcon from '@mui/icons-material/DragIndicatorRounded'
 import RoiThumbnail from './RoiThumbnail.jsx'
-import { confidenceLevel, percent } from '../report/format.js'
+import { confidenceLevel, confidenceText } from '../report/format.js'
 import { composeRoiImage, setKeyImageDrag, suggestionCaption } from '../report/keyImages.js'
 
 const GAP = 8
-const CONF_TEXT = { success: '#15803d', warning: '#b45309', error: '#dc2626' }
+const CONF_TEXT = { success: '#15803d', warning: '#b45309', error: '#dc2626', none: '#94a3b8' }
 
 const STATUS = {
   pending: { label: 'To review', color: '#6d28d9', icon: null },
@@ -148,7 +148,7 @@ function RailCard({ suggestion, status, active, showing, readOnly, onAction, onH
         </Typography>
         {status === 'pending' ? (
           <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: CONF_TEXT[level.color], flexShrink: 0 }}>
-            {percent(suggestion.confidence)}
+            {confidenceText(suggestion.confidence)}
           </Typography>
         ) : (
           <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, color: meta.color, flexShrink: 0 }} title={meta.label}>
@@ -169,11 +169,13 @@ function RailCard({ suggestion, status, active, showing, readOnly, onAction, onH
             <Box sx={{ minWidth: 0, flex: 1 }}>
               <Typography sx={{ fontSize: '0.66rem', color: '#64748b' }}>Model confidence</Typography>
               <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: CONF_TEXT[level.color] }}>
-                {level.label} · {percent(suggestion.confidence)}
+                {typeof suggestion.confidence === 'number' ? `${level.label} · ${confidenceText(suggestion.confidence)}` : 'Not given by the model'}
               </Typography>
-              <Box sx={{ mt: 0.5, height: 4, borderRadius: 2, bgcolor: '#f1f5f9', overflow: 'hidden' }}>
-                <Box sx={{ width: percent(suggestion.confidence), height: '100%', bgcolor: CONF_TEXT[level.color] }} />
-              </Box>
+              {typeof suggestion.confidence === 'number' && (
+                <Box sx={{ mt: 0.5, height: 4, borderRadius: 2, bgcolor: '#f1f5f9', overflow: 'hidden' }}>
+                  <Box sx={{ width: confidenceText(suggestion.confidence), height: '100%', bgcolor: CONF_TEXT[level.color] }} />
+                </Box>
+              )}
             </Box>
           </Stack>
 

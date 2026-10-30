@@ -32,14 +32,17 @@ export default defineConfig(({ mode }) => {
   const authorization = `Basic ${Buffer.from(`${user}:${password}`).toString('base64')}`
 
   const orthanc = { target, changeOrigin: true, headers: { Authorization: authorization } }
+  const backend = { target: env.BACKEND_URL || 'http://localhost:4000', changeOrigin: true }
 
   return {
     plugins: [react(), ohifConfigOverrides(target, authorization)],
     server: {
+      allowedHosts: ['.ngrok-free.dev', '.ngrok-free.app', '.ngrok.app', '.ngrok.io'],
       proxy: {
         '/ohif': orthanc,
         '/dicom-web': orthanc,
         '/wado': orthanc,
+        '/api': backend,
       },
     },
   }

@@ -98,10 +98,13 @@ export function scanSuggestions(doc) {
     const mark = node.marks.find((m) => m.type.name === 'aiText')
     if (!mark) return
     const id = mark.attrs.suggestionId
-    const entry = result[id] || (result[id] = { text: '', fragments: 0, end: -1 })
+    const entry = result[id] || (result[id] = { text: '', fragments: 0, start: pos, end: -1 })
     if (entry.end !== pos) entry.fragments += 1
     entry.text += node.text
     entry.end = pos + node.nodeSize
+  })
+  Object.values(result).forEach((entry) => {
+    entry.fullText = doc.textBetween(entry.start, entry.end, ' ')
   })
   return result
 }

@@ -5,31 +5,14 @@ export const STATUS = {
   discarded: 'discarded',
 }
 
-const event = (actor, action, suggestionId = null, detail = '') => ({
-  id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-  at: new Date().toISOString(),
-  actor,
-  action,
-  suggestionId,
-  detail,
-})
-
 export function initReview(draft) {
+  const firstPending = draft.suggestions.find((s) => s.decision === STATUS.pending)
   return {
     suggestions: draft.suggestions,
-    statuses: Object.fromEntries(draft.suggestions.map((s) => [s.id, STATUS.pending])),
-    history: [
-      event(
-        'AI',
-        'Draft generated',
-        null,
-        draft.model
-          ? `${draft.model.name} v${draft.model.version} (${draft.model.zoo}) · ${draft.suggestions.length} suggestions`
-          : 'No AI draft for this study · manual report',
-      ),
-    ],
-    finalized: null,
-    activeId: draft.suggestions.length ? draft.suggestions[0].id : null,
+    statuses: Object.fromEntries(draft.suggestions.map((s) => [s.id, s.decision || STATUS.pending])),
+    texts: Object.fromEntries(draft.suggestions.map((s) => [s.id, s.decision === STATUS.edited ? s.reviewerText : s.text])),
+    finalized: draft.status === 'final' ? { reviewer: draft.reviewer, at: draft.finalisedAt } : null,
+    activeId: draft.status === 'final' ? null : (firstPending || draft.suggestions[0] || {}).id || null,
     showingId: null,
     viewerTarget: null,
   }
@@ -43,61 +26,36 @@ function deriveStatus(current, original, scan) {
   return current
 }
 
-const ACTION_LABEL = {
-  [STATUS.edited]: 'Edited',
-  [STATUS.discarded]: 'Discarded',
-  [STATUS.pending]: 'Restored',
-  [STATUS.accepted]: 'Accepted',
-}
-
 export function reviewReducer(state, action) {
   switch (action.type) {
     case 'accept':
-    case 'unaccept': {
-      const next = action.type === 'accept' ? STATUS.accepted : STATUS.pending
-      return {
-        ...state,
-        statuses: { ...state.statuses, [action.id]: next },
-        history: [
-          ...state.history,
-          event('Reviewer', action.type === 'accept' ? 'Accepted' : 'Moved back to pending', action.id),
-        ],
-      }
-    }
+      return { ...state, statuses: { ...state.statuses, [action.id]: STATUS.accepted } }
+    case 'unaccept':
     case 'revert':
-      return {
-        ...state,
-        statuses: { ...state.statuses, [action.id]: STATUS.pending },
-        history: [...state.history, event('Reviewer', 'Reverted to AI wording', action.id)],
-      }
+      return { ...state, statuses: { ...state.statuses, [action.id]: STATUS.pending } }
     case 'scan': {
       const statuses = { ...state.statuses }
-      const events = []
-      state.suggestions
-        .forEach((s) => {
-          const current = statuses[s.id]
-          const next = deriveStatus(current, s.text, action.result[s.id])
-          if (next === current) return
+      const texts = { ...state.texts }
+      let changed = false
+      state.suggestions.forEach((s) => {
+        const scan = action.result[s.id]
+        const next = deriveStatus(statuses[s.id], s.text, scan)
+        const text = scan ? scan.fullText : ''
+        if (next !== statuses[s.id]) {
           statuses[s.id] = next
-          const detail = next === STATUS.edited ? action.result[s.id].text : ''
-          events.push(event('Reviewer', ACTION_LABEL[next], s.id, detail))
-        })
-      if (!events.length) return state
-      return { ...state, statuses, history: [...state.history, ...events] }
+          changed = true
+        }
+        if (text !== texts[s.id]) {
+          texts[s.id] = text
+          changed = true
+        }
+      })
+      return changed ? { ...state, statuses, texts } : state
     }
     case 'finalize':
-      return {
-        ...state,
-        finalized: { reviewer: action.reviewer, at: new Date().toISOString() },
-        activeId: null,
-        history: [...state.history, event('Reviewer', 'Finalized as reviewed draft', null, action.reviewer)],
-      }
+      return { ...state, finalized: { reviewer: action.reviewer, at: action.at || new Date().toISOString() }, activeId: null }
     case 'reopen':
-      return {
-        ...state,
-        finalized: null,
-        history: [...state.history, event('Reviewer', 'Reopened for editing')],
-      }
+      return { ...state, finalized: null }
     case 'setActive':
       return state.activeId === action.id ? state : { ...state, activeId: action.id }
     case 'showInViewer':

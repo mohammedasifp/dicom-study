@@ -3,9 +3,26 @@ import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table'
+import { Placeholder } from '@tiptap/extensions'
 import { AiText, ReviewerText, scanSuggestions } from '../editor/authorshipMarks.js'
 import { insertImageFiles } from '../report/keyImages.js'
 import { REVIEW_ACTION_EVENT, ReviewDecorations, reviewKey, suggestionInBlock } from '../editor/reviewDecorations.js'
+
+const PLACEHOLDERS = {
+  'clinical history': 'Add the clinical history…',
+  technique: 'Describe the technique…',
+  findings: 'Describe the findings…',
+  impression: 'Write the impression…',
+}
+
+function sectionPlaceholder({ editor, node, pos }) {
+  if (node.type.name !== 'paragraph') return ''
+  let heading = ''
+  editor.state.doc.forEach((child, offset) => {
+    if (offset < pos && child.type.name === 'heading') heading = child.textContent.trim().toLowerCase()
+  })
+  return PLACEHOLDERS[heading] || ''
+}
 
 const extensions = [
   StarterKit.configure({
@@ -22,6 +39,7 @@ const extensions = [
   TableRow,
   TableHeader,
   TableCell,
+  Placeholder.configure({ placeholder: sectionPlaceholder, showOnlyCurrent: false }),
   AiText,
   ReviewerText,
   ReviewDecorations,

@@ -24,8 +24,8 @@ function Stat({ value, label, color }) {
   )
 }
 
-export default function FinalizeDialog({ open, counts, onClose, onConfirm }) {
-  const [reviewer, setReviewer] = useState('Dr. ')
+export default function FinalizeDialog({ open, counts, defaultReviewer, onClose, onConfirm }) {
+  const [reviewer, setReviewer] = useState(defaultReviewer || 'Dr. ')
   const [attested, setAttested] = useState(false)
   const valid = reviewer.trim().length > 4 && attested
 

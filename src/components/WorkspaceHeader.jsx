@@ -27,6 +27,8 @@ import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined'
 import VerticalSplitOutlinedIcon from '@mui/icons-material/VerticalSplitOutlined'
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined'
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded'
+import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded'
+import SlaChip from './SlaChip.jsx'
 import { chrome } from '../theme.js'
 import { formatDate, formatDateTime } from '../report/format.js'
 
@@ -67,8 +69,11 @@ export default function WorkspaceHeader({
   onExportPdf,
   onFinalize,
   onReopen,
+  onRerun,
+  onSetSla,
 }) {
   const [anchor, setAnchor] = useState(null)
+  const [modelAnchor, setModelAnchor] = useState(null)
   const { patient, study, model } = draft
   const pending = counts.pending
   const progress = counts.total ? (counts.decided / counts.total) * 100 : 0
@@ -94,33 +99,66 @@ export default function WorkspaceHeader({
       />
 
       {model && (
-      <Tooltip
-        title={
-          <>
-            {model.zoo} · {model.task}
-            <br />
-            Run {model.runId} · {formatDateTime(draft.generatedAt)}
-          </>
-        }
+        <>
+      <Stack
+        component="button"
+        type="button"
+        direction="row"
+        spacing={0.75}
+        onClick={(e) => setModelAnchor(e.currentTarget)}
+        title="AI model used for this draft"
+        sx={{
+          alignItems: 'center',
+          display: { xs: 'none', lg: 'flex' },
+          px: 1.25,
+          height: 30,
+          borderRadius: 99,
+          border: '1px solid #3b2f6b',
+          bgcolor: 'rgba(124,58,237,0.14)',
+          flexShrink: 0,
+          cursor: 'pointer',
+          font: 'inherit',
+          '&:hover': { borderColor: '#6d5bb0' },
+        }}
       >
-        <Stack
-          direction="row"
-          spacing={0.75}
-          sx={{ alignItems: 'center', display: { xs: 'none', lg: 'flex' },
-            px: 1.25,
-            height: 30,
-            borderRadius: 99,
-            border: '1px solid #3b2f6b',
-            bgcolor: 'rgba(124,58,237,0.14)',
-            flexShrink: 0,
+        <AutoAwesomeRoundedIcon sx={{ fontSize: 15, color: '#c4b5fd' }} />
+        <Typography sx={{ fontSize: '0.74rem', color: '#ddd6fe', fontWeight: 600, whiteSpace: 'nowrap' }}>
+          {model.name} <Box component="span" sx={{ color: '#a78bfa' }}>v{model.version}</Box>
+        </Typography>
+        <ExpandMoreRoundedIcon sx={{ fontSize: 16, color: '#a78bfa' }} />
+      </Stack>
+      <Menu
+        anchorEl={modelAnchor}
+        open={Boolean(modelAnchor)}
+        onClose={() => setModelAnchor(null)}
+        slotProps={{ paper: { sx: { mt: 0.75, minWidth: 280 } } }}
+      >
+        <Box sx={{ px: 2, py: 1 }}>
+          <Typography sx={{ fontSize: '0.84rem', fontWeight: 700 }}>
+            {model.name} · v{model.version}
+          </Typography>
+          <Typography sx={{ fontSize: '0.74rem', color: 'text.secondary' }}>
+            {[model.zoo, model.id, model.task].filter(Boolean).join(' · ')}
+          </Typography>
+          {draft.generatedAt && (
+            <Typography sx={{ fontSize: '0.74rem', color: 'text.secondary' }}>Draft generated {formatDateTime(draft.generatedAt)}</Typography>
+          )}
+        </Box>
+        <Divider />
+        <MenuItem
+          disabled={Boolean(finalized)}
+          onClick={() => {
+            setModelAnchor(null)
+            onRerun()
           }}
         >
-          <AutoAwesomeRoundedIcon sx={{ fontSize: 15, color: '#c4b5fd' }} />
-          <Typography sx={{ fontSize: '0.74rem', color: '#ddd6fe', fontWeight: 600, whiteSpace: 'nowrap' }}>
-            {model.name} <Box component="span" sx={{ color: '#a78bfa' }}>v{model.version}</Box>
-          </Typography>
-        </Stack>
-      </Tooltip>
+          <ListItemIcon>
+            <ReplayRoundedIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="Run AI again…" secondary="Choose a model or add an instruction" />
+        </MenuItem>
+      </Menu>
+        </>
       )}
 
       <Box sx={{ flex: 1 }} />
@@ -199,6 +237,8 @@ export default function WorkspaceHeader({
       </Menu>
 
       <Divider orientation="vertical" flexItem sx={{ borderColor: chrome.border, my: 1.5 }} />
+
+      {!finalized && <SlaChip sla={study.sla} onSet={onSetSla} />}
 
       {finalized ? (
         <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', flexShrink: 0 }}>

@@ -6,8 +6,7 @@ import { useAuth } from './auth/AuthContext.js'
 import { ROUTE, navigate, parseHash, paths } from './routes.js'
 
 // The report editor (TipTap) is the heaviest part of the bundle; load it only when a study is opened.
-const ReportingWorkspace = lazy(() => import('./pages/ReportingWorkspace.jsx'))
-const StudyReportPage = lazy(() => import('./pages/StudyReportPage.jsx'))
+const ReportingScreen = lazy(() => import('./pages/ReportingScreen.jsx'))
 
 function App() {
   const { user, logout } = useAuth()
@@ -33,14 +32,10 @@ function App() {
 }
 
 function renderRoute(route, onLogout) {
-  switch (route.name) {
-    case ROUTE.STUDY_REPORT:
-      return <StudyReportPage studyId={route.studyId} onExit={() => navigate(paths.worklist())} />
-    case ROUTE.REPORT:
-      return <ReportingWorkspace onExit={() => navigate(paths.worklist())} />
-    default:
-      return <RadiologistWorklist onOpenStudy={(id) => navigate(paths.studyReport(id))} onHome={() => navigate(paths.worklist())} onLogout={onLogout} />
+  if (route.name === ROUTE.STUDY_REPORT) {
+    return <ReportingScreen key={route.studyId} uid={route.studyId} onExit={() => navigate(paths.worklist())} />
   }
+  return <RadiologistWorklist onOpenStudy={(id) => navigate(paths.studyReport(id))} onHome={() => navigate(paths.worklist())} onLogout={onLogout} />
 }
 
 export default App

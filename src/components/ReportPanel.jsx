@@ -62,6 +62,27 @@ function FooterButton({ icon, label, children }) {
 
 const popTitle = { fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.06em', color: 'text.secondary', mb: 1 }
 
+function SaveIndicator({ state, onRetry }) {
+  if (!state || state.status === 'idle') return null
+  if (state.status === 'error') {
+    return (
+      <Box
+        component="button"
+        type="button"
+        onClick={onRetry}
+        sx={{ border: 0, bgcolor: 'transparent', font: 'inherit', fontSize: '0.72rem', fontWeight: 600, color: 'error.main', cursor: 'pointer', mr: 1, whiteSpace: 'nowrap' }}
+      >
+        Not saved · Retry
+      </Box>
+    )
+  }
+  const text =
+    state.status === 'saving'
+      ? 'Saving…'
+      : `Saved ${new Date(state.at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`
+  return <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', mr: 1, whiteSpace: 'nowrap' }}>{text}</Typography>
+}
+
 function HeaderField({ label, value }) {
   return (
     <Box sx={{ minWidth: 0 }}>
@@ -98,6 +119,8 @@ export default function ReportPanel({
   onTransaction,
   onRestore,
   onFinalize,
+  saveState,
+  onRetrySave,
 }) {
   const readOnly = Boolean(finalized)
   const { patient, study, model } = draft
@@ -105,6 +128,7 @@ export default function ReportPanel({
   return (
     <Stack sx={{ height: '100%', bgcolor: 'background.default', minWidth: 0 }}>
       <EditorToolbar editor={editor} disabled={readOnly} showAuthorship={showAuthorship} onToggleAuthorship={onToggleAuthorship}>
+        {!readOnly && <SaveIndicator state={saveState} onRetry={onRetrySave} />}
         <ReviewNavigator
           counts={counts}
           discarded={discarded}
@@ -212,9 +236,10 @@ export default function ReportPanel({
             {model.name} v{model.version} · {model.zoo}
           </Typography>
           <Typography sx={{ fontSize: '0.74rem', color: 'text.secondary', mb: 1.25 }}>
-            {model.task} · run {model.runId} · {formatDateTime(draft.generatedAt)}
+            {[model.task, draft.generatedAt && formatDateTime(draft.generatedAt)].filter(Boolean).join(' · ')}
           </Typography>
           <Typography sx={popTitle}>UNCERTAINTY & LIMITATIONS</Typography>
+          {draft.uncertainty && <Typography sx={{ fontSize: '0.74rem', lineHeight: 1.55, mb: 0.75 }}>{draft.uncertainty}</Typography>}
           <Box component="ul" sx={{ m: 0, pl: 2.25 }}>
             {draft.limitations.map((item) => (
               <Typography component="li" key={item} sx={{ fontSize: '0.74rem', lineHeight: 1.55, mb: 0.5 }}>
