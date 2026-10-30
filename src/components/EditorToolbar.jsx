@@ -1,5 +1,9 @@
 import { Box, Divider, IconButton, Stack, Tooltip, Typography } from '@mui/material'
 import { useEditorState } from '@tiptap/react'
+import TitleRoundedIcon from '@mui/icons-material/TitleRounded'
+import AddPhotoAlternateOutlinedIcon from '@mui/icons-material/AddPhotoAlternateOutlined'
+import TableChartOutlinedIcon from '@mui/icons-material/TableChartOutlined'
+import { insertImageFiles } from '../report/keyImages.js'
 import FormatBoldRoundedIcon from '@mui/icons-material/FormatBoldRounded'
 import FormatItalicRoundedIcon from '@mui/icons-material/FormatItalicRounded'
 import FormatUnderlinedRoundedIcon from '@mui/icons-material/FormatUnderlinedRounded'
@@ -14,8 +18,9 @@ function AuthorshipToggle({ on, onToggle }) {
     <Tooltip
       title={
         <Stack spacing={0.5} sx={{ py: 0.25 }}>
-          <span>Violet bar: AI-drafted text (double bar = edited)</span>
-          <span>Green highlight: written by the reviewer</span>
+          <span>Show who wrote what in the report:</span>
+          <span>Violet tint: AI-drafted text · Green tint: your text</span>
+          <span>(Points still to review are always tinted.)</span>
         </Stack>
       }
     >
@@ -68,8 +73,10 @@ export default function EditorToolbar({ editor, disabled, showAuthorship, onTogg
             bold: ed.isActive('bold'),
             italic: ed.isActive('italic'),
             underline: ed.isActive('underline'),
+            heading: ed.isActive('heading'),
             bulletList: ed.isActive('bulletList'),
             orderedList: ed.isActive('orderedList'),
+            table: ed.isActive('table'),
             canUndo: ed.can().undo(),
             canRedo: ed.can().redo(),
           }
@@ -78,12 +85,21 @@ export default function EditorToolbar({ editor, disabled, showAuthorship, onTogg
 
   const off = disabled || !editor || !state
   const tools = [
+    { key: 'heading', label: 'Section heading', icon: <TitleRoundedIcon />, run: (c) => c.toggleHeading({ level: 3 }) },
     { key: 'bold', label: 'Bold (Ctrl+B)', icon: <FormatBoldRoundedIcon />, run: (c) => c.toggleBold() },
     { key: 'italic', label: 'Italic (Ctrl+I)', icon: <FormatItalicRoundedIcon />, run: (c) => c.toggleItalic() },
     { key: 'underline', label: 'Underline (Ctrl+U)', icon: <FormatUnderlinedRoundedIcon />, run: (c) => c.toggleUnderline() },
     'divider',
     { key: 'bulletList', label: 'Bulleted list', icon: <FormatListBulletedRoundedIcon />, run: (c) => c.toggleBulletList() },
     { key: 'orderedList', label: 'Numbered list', icon: <FormatListNumberedRoundedIcon />, run: (c) => c.toggleOrderedList() },
+    'divider',
+    { key: 'image', label: 'Insert image from computer (or drag key images from the viewer)', icon: <AddPhotoAlternateOutlinedIcon />, upload: true },
+    {
+      key: 'table',
+      label: 'Insert table (measurements)',
+      icon: <TableChartOutlinedIcon />,
+      run: (c) => c.insertTable({ rows: 3, cols: 3, withHeaderRow: true }),
+    },
     'divider',
     { key: 'undo', label: 'Undo (Ctrl+Z)', icon: <UndoRoundedIcon />, run: (c) => c.undo(), enabled: state && state.canUndo },
     { key: 'redo', label: 'Redo (Ctrl+Y)', icon: <RedoRoundedIcon />, run: (c) => c.redo(), enabled: state && state.canRedo },
@@ -102,9 +118,10 @@ export default function EditorToolbar({ editor, disabled, showAuthorship, onTogg
             <span>
               <IconButton
                 size="small"
+                component={tool.upload ? 'label' : 'button'}
                 disabled={off || tool.enabled === false}
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => tool.run(editor.chain().focus()).run()}
+                onClick={tool.upload ? undefined : () => tool.run(editor.chain().focus()).run()}
                 sx={{
                   width: 30,
                   height: 30,
@@ -114,6 +131,18 @@ export default function EditorToolbar({ editor, disabled, showAuthorship, onTogg
                 }}
               >
                 {tool.icon}
+                {tool.upload && (
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    hidden
+                    onChange={(e) => {
+                      if (editor && e.target.files.length) insertImageFiles(editor, e.target.files)
+                      e.target.value = ''
+                    }}
+                  />
+                )}
               </IconButton>
             </span>
           </Tooltip>

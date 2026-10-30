@@ -1,16 +1,14 @@
 import { useState } from 'react'
-import { Box, InputBase, Popover, Stack, Typography } from '@mui/material'
+import { Box, Popover, Stack, Typography } from '@mui/material'
 import GppMaybeOutlinedIcon from '@mui/icons-material/GppMaybeOutlined'
 import KeyboardOutlinedIcon from '@mui/icons-material/KeyboardOutlined'
-import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded'
-import VerifiedRoundedIcon from '@mui/icons-material/VerifiedRounded'
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import EditorToolbar from './EditorToolbar.jsx'
-import SectionEditor from './SectionEditor.jsx'
+import ReportEditor from './ReportEditor.jsx'
 import ReviewNavigator from './ReviewNavigator.jsx'
+import SuggestionRail from './SuggestionRail.jsx'
 import { DISCLAIMER, DISCLAIMER_SHORT } from '../report/exportReport.js'
 import { formatDate, formatDateTime } from '../report/format.js'
-
-const GUTTER = 88
 
 const SHORTCUTS = [
   ['Alt + ↓ / ↑', 'Next / previous point to review'],
@@ -19,65 +17,7 @@ const SHORTCUTS = [
   ['Ctrl + Z', 'Undo the last edit'],
 ]
 
-function SectionTitle({ children }) {
-  return (
-    <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', mb: 1, mt: 3.5 }}>
-      <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#334155' }}>
-        {children}
-      </Typography>
-      <Box sx={{ flex: 1, height: '1px', bgcolor: 'divider' }} />
-    </Stack>
-  )
-}
-
-const fieldText = { fontSize: '0.82rem', lineHeight: 1.6, color: '#475569' }
-
-function ContextField({ label, value, onChange, readOnly }) {
-  const [open, setOpen] = useState(false)
-  return (
-    <Box sx={{ minWidth: 0 }}>
-      <Typography sx={{ fontSize: '0.66rem', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#94a3b8', mb: 0.25 }}>
-        {label}
-      </Typography>
-      {open && !readOnly ? (
-        <InputBase
-          multiline
-          fullWidth
-          autoFocus
-          value={value}
-          onBlur={() => setOpen(false)}
-          onChange={(e) => onChange(e.target.value)}
-          sx={{ ...fieldText, px: 1, py: 0.5, mx: -1, borderRadius: 1.5, bgcolor: '#f8fafc', boxShadow: 'inset 0 0 0 1px #cbd5e1' }}
-        />
-      ) : (
-        <Box
-          role="button"
-          tabIndex={0}
-          title={readOnly ? value : 'Click to edit'}
-          onClick={() => setOpen(true)}
-          onKeyDown={(e) => e.key === 'Enter' && setOpen(true)}
-          sx={{
-            ...fieldText,
-            px: 1,
-            py: 0.5,
-            mx: -1,
-            borderRadius: 1.5,
-            cursor: readOnly ? 'default' : 'text',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            '&:hover': { bgcolor: readOnly ? 'transparent' : '#f8fafc' },
-          }}
-        >
-          {value}
-        </Box>
-      )}
-    </Box>
-  )
-}
-
-function ShortcutsButton() {
+function FooterButton({ icon, label, children }) {
   const [anchor, setAnchor] = useState(null)
   return (
     <>
@@ -99,11 +39,12 @@ function ShortcutsButton() {
           px: 0.75,
           py: 0.25,
           borderRadius: 1,
+          whiteSpace: 'nowrap',
           '&:hover': { bgcolor: '#fef3c7' },
         }}
       >
-        <KeyboardOutlinedIcon sx={{ fontSize: 15 }} />
-        Shortcuts
+        {icon}
+        {label}
       </Box>
       <Popover
         open={Boolean(anchor)}
@@ -111,84 +52,59 @@ function ShortcutsButton() {
         onClose={() => setAnchor(null)}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
         transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        slotProps={{ paper: { sx: { p: 1.5, mt: -1, width: 300, boxShadow: '0 12px 32px rgba(15,23,42,0.16)' } } }}
+        slotProps={{ paper: { sx: { p: 1.75, mt: -1, width: 340, boxShadow: '0 12px 32px rgba(15,23,42,0.16)' } } }}
       >
-        <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'text.secondary', mb: 1 }}>KEYBOARD SHORTCUTS</Typography>
-        <Stack spacing={0.75}>
-          {SHORTCUTS.map(([keys, label]) => (
-            <Stack key={keys} direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-              <Box
-                component="kbd"
-                sx={{
-                  minWidth: 112,
-                  fontFamily: 'inherit',
-                  fontSize: '0.7rem',
-                  fontWeight: 600,
-                  px: 0.75,
-                  py: 0.25,
-                  borderRadius: 1,
-                  bgcolor: '#f1f5f9',
-                  border: '1px solid #e2e8f0',
-                  textAlign: 'center',
-                }}
-              >
-                {keys}
-              </Box>
-              <Typography sx={{ fontSize: '0.76rem' }}>{label}</Typography>
-            </Stack>
-          ))}
-        </Stack>
+        {children}
       </Popover>
     </>
   )
 }
 
+const popTitle = { fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.06em', color: 'text.secondary', mb: 1 }
+
+function HeaderField({ label, value }) {
+  return (
+    <Box sx={{ minWidth: 0 }}>
+      <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.07em', color: '#94a3b8', textTransform: 'uppercase' }}>
+        {label}
+      </Typography>
+      <Typography noWrap sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#1e293b' }}>
+        {value}
+      </Typography>
+    </Box>
+  )
+}
+
 export default function ReportPanel({
   draft,
-  fields,
-  onFieldChange,
   initialContent,
-  suggestionInfo,
+  suggestions,
   statuses,
   counts,
   finalized,
   showAuthorship,
   onToggleAuthorship,
-  activeEditor,
+  editor,
   activeId,
+  hoverId,
   showingId,
+  layoutTick,
   discarded,
   onEditorReady,
-  onEditorFocus,
   onScan,
   onSuggestionFocus,
   onReviewAction,
+  onHover,
+  onTransaction,
   onRestore,
   onFinalize,
 }) {
   const readOnly = Boolean(finalized)
-
-  const editorProps = {
-    suggestionInfo,
-    editable: !readOnly,
-    statuses,
-    activeId,
-    showingId,
-    onReady: onEditorReady,
-    onFocus: onEditorFocus,
-    onScan,
-    onSuggestionFocus,
-    onReviewAction,
-  }
+  const { patient, study, model } = draft
 
   return (
     <Stack sx={{ height: '100%', bgcolor: 'background.default', minWidth: 0 }}>
-      <EditorToolbar
-        editor={activeEditor}
-        disabled={readOnly}
-        showAuthorship={showAuthorship}
-        onToggleAuthorship={onToggleAuthorship}
-      >
+      <EditorToolbar editor={editor} disabled={readOnly} showAuthorship={showAuthorship} onToggleAuthorship={onToggleAuthorship}>
         <ReviewNavigator
           counts={counts}
           discarded={discarded}
@@ -200,94 +116,85 @@ export default function ReportPanel({
         />
       </EditorToolbar>
 
-      <Box className="report-scroll" sx={{ flex: 1, overflowY: 'auto', px: { xs: 1.5, md: 2.5 }, py: 2.5 }}>
-        <Box
-          className={`report-doc${showAuthorship ? ' show-authorship' : ''}${readOnly ? ' is-readonly' : ''}`}
-          sx={{
-            maxWidth: 820,
-            mx: 'auto',
-            bgcolor: 'background.paper',
-            borderRadius: 2.5,
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 1px 2px rgba(15,23,42,0.04), 0 8px 24px rgba(15,23,42,0.04)',
-            pt: 3.5,
-            pb: 4,
-            pr: { xs: 2.5, md: 4 },
-            pl: `${GUTTER}px`,
-          }}
-        >
-          <Stack direction="row" spacing={2} sx={{ alignItems: 'flex-start', justifyContent: 'space-between' }}>
-            <Box sx={{ minWidth: 0 }}>
-              <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.09em', color: '#94a3b8' }}>
-                RADIOLOGY REPORT
-              </Typography>
-              <Typography sx={{ fontSize: '1.2rem', fontWeight: 700, letterSpacing: '-0.01em', mt: 0.25 }}>
-                {draft.study.description}
-              </Typography>
-              <Typography sx={{ fontSize: '0.78rem', color: 'text.secondary', mt: 0.25 }}>
-                {draft.patient.name} · {draft.patient.age} {draft.patient.sex} · {formatDate(draft.study.studyDate)} · Ref.{' '}
-                {draft.study.referringPhysician}
-              </Typography>
-            </Box>
-            {finalized ? (
-              <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', px: 1, py: 0.5, borderRadius: 1.5, bgcolor: 'success.light', flexShrink: 0 }}>
-                <VerifiedRoundedIcon sx={{ fontSize: 15, color: 'success.main' }} />
-                <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: 'success.dark' }}>FINAL REVIEWED DRAFT</Typography>
-              </Stack>
-            ) : (
-              <Box sx={{ px: 1, py: 0.5, borderRadius: 1.5, bgcolor: '#fef3c7', flexShrink: 0 }}>
-                <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#92400e' }}>AI DRAFT · UNDER REVIEW</Typography>
-              </Box>
-            )}
-          </Stack>
-
+      <Box className="report-scroll" sx={{ flex: 1, overflowY: 'auto', px: 2, py: 2.5 }}>
+        <Stack direction="row" spacing={1.5} sx={{ alignItems: 'flex-start', justifyContent: 'center', position: 'relative' }}>
           <Box
+            className={`report-doc${showAuthorship ? ' show-authorship' : ''}${readOnly ? ' is-readonly' : ''}`}
             sx={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-              columnGap: 3,
-              rowGap: 1.5,
-              mt: 3,
-              pt: 2,
-              borderTop: '1px solid',
-              borderColor: 'divider',
+              flex: '1 1 auto',
+              minWidth: 0,
+              maxWidth: 780,
+              bgcolor: 'background.paper',
+              borderRadius: 1.5,
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 1px 3px rgba(15,23,42,0.06)',
+              px: { xs: 3, md: 5 },
+              pt: 4,
+              pb: 5,
             }}
           >
-            <ContextField label="Clinical history" value={fields.clinicalHistory} readOnly={readOnly} onChange={(v) => onFieldChange('clinicalHistory', v)} />
-            <ContextField label="Technique" value={fields.technique} readOnly={readOnly} onChange={(v) => onFieldChange('technique', v)} />
-          </Box>
+            <Typography sx={{ fontSize: '1.05rem', fontWeight: 700, letterSpacing: '0.02em', textTransform: 'uppercase', color: '#0f172a' }}>
+              {study.description}
+            </Typography>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                gap: 1.25,
+                mt: 1.5,
+                pb: 2,
+                mb: 1,
+                borderBottom: '2px solid #0f172a',
+              }}
+            >
+              <HeaderField label="Patient" value={patient.name} />
+              <HeaderField label="Patient ID" value={patient.patientId} />
+              <HeaderField label="Age / Sex" value={`${patient.age} / ${patient.sex}`} />
+              <HeaderField label="Study date" value={formatDate(study.studyDate)} />
+              <HeaderField label="Accession" value={study.accessionNumber} />
+              <HeaderField label="Referred by" value={study.referringPhysician} />
+            </Box>
 
-          <SectionTitle>Findings</SectionTitle>
-          <Box sx={{ ml: '-15px' }}>
-            <SectionEditor section="findings" initialContent={initialContent.findings} {...editorProps} />
-          </Box>
+            <ReportEditor
+              initialContent={initialContent}
+              editable={!readOnly}
+              statuses={statuses}
+              activeId={activeId}
+              hoverId={hoverId}
+              onReady={onEditorReady}
+              onScan={onScan}
+              onSuggestionFocus={onSuggestionFocus}
+              onReviewAction={onReviewAction}
+              onTransaction={onTransaction}
+            />
 
-          <SectionTitle>Impression</SectionTitle>
-          <Box sx={{ ml: '-15px' }}>
-            <SectionEditor section="impression" initialContent={initialContent.impression} {...editorProps} />
-          </Box>
-
-          <Box sx={{ mt: 3.5, p: 1.5, borderRadius: 2, bgcolor: '#fffbeb', border: '1px solid #fde68a' }}>
-            <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center', mb: 0.75 }}>
-              <WarningAmberRoundedIcon sx={{ fontSize: 16, color: 'warning.main' }} />
-              <Typography sx={{ fontSize: '0.74rem', fontWeight: 700, color: '#92400e' }}>AI uncertainty & limitations</Typography>
-            </Stack>
-            <Box component="ul" sx={{ m: 0, pl: 2.75 }}>
-              {draft.limitations.map((item) => (
-                <Typography component="li" key={item} sx={{ fontSize: '0.74rem', color: '#78350f', lineHeight: 1.55 }}>
-                  {item}
+            <Box sx={{ mt: 5, pt: 1.5, borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+              <Box>
+                <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.07em', color: '#94a3b8' }}>REPORTED BY</Typography>
+                <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: finalized ? '#0f172a' : '#94a3b8' }}>
+                  {finalized ? finalized.reviewer : 'Awaiting radiologist sign-off'}
                 </Typography>
-              ))}
+              </Box>
+              {finalized && (
+                <Box sx={{ textAlign: 'right' }}>
+                  <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.07em', color: '#94a3b8' }}>SIGNED</Typography>
+                  <Typography sx={{ fontSize: '0.85rem', fontWeight: 600 }}>{formatDateTime(finalized.at)}</Typography>
+                </Box>
+              )}
             </Box>
           </Box>
 
-          <Box sx={{ mt: 3, pt: 2, borderTop: '1px dashed', borderColor: 'divider' }}>
-            <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.07em', color: '#94a3b8' }}>REVIEWED BY</Typography>
-            <Typography sx={{ fontSize: '0.84rem', fontWeight: 600, mt: 0.25, color: finalized ? 'text.primary' : '#94a3b8' }}>
-              {finalized ? `${finalized.reviewer} · ${formatDateTime(finalized.at)}` : 'Awaiting radiologist sign-off'}
-            </Typography>
-          </Box>
-        </Box>
+          <SuggestionRail
+            suggestions={suggestions}
+            statuses={statuses}
+            activeId={activeId}
+            showingId={showingId}
+            readOnly={readOnly}
+            layoutTick={layoutTick}
+            onAction={onReviewAction}
+            onHover={onHover}
+          />
+        </Stack>
       </Box>
 
       <Stack
@@ -299,7 +206,51 @@ export default function ReportPanel({
         <Typography noWrap sx={{ fontSize: '0.7rem', color: '#78350f', flex: 1 }} title={DISCLAIMER}>
           {DISCLAIMER_SHORT}
         </Typography>
-        {!readOnly && <ShortcutsButton />}
+        <FooterButton icon={<InfoOutlinedIcon sx={{ fontSize: 15 }} />} label="AI model notes">
+          <Typography sx={popTitle}>
+            {model.name} v{model.version} · {model.zoo}
+          </Typography>
+          <Typography sx={{ fontSize: '0.74rem', color: 'text.secondary', mb: 1.25 }}>
+            {model.task} · run {model.runId} · {formatDateTime(draft.generatedAt)}
+          </Typography>
+          <Typography sx={popTitle}>UNCERTAINTY & LIMITATIONS</Typography>
+          <Box component="ul" sx={{ m: 0, pl: 2.25 }}>
+            {draft.limitations.map((item) => (
+              <Typography component="li" key={item} sx={{ fontSize: '0.74rem', lineHeight: 1.55, mb: 0.5 }}>
+                {item}
+              </Typography>
+            ))}
+          </Box>
+        </FooterButton>
+        {!readOnly && (
+          <FooterButton icon={<KeyboardOutlinedIcon sx={{ fontSize: 15 }} />} label="Shortcuts">
+            <Typography sx={popTitle}>KEYBOARD SHORTCUTS</Typography>
+            <Stack spacing={0.75}>
+              {SHORTCUTS.map(([keys, label]) => (
+                <Stack key={keys} direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+                  <Box
+                    component="kbd"
+                    sx={{
+                      minWidth: 112,
+                      fontFamily: 'inherit',
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      px: 0.75,
+                      py: 0.25,
+                      borderRadius: 1,
+                      bgcolor: '#f1f5f9',
+                      border: '1px solid #e2e8f0',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {keys}
+                  </Box>
+                  <Typography sx={{ fontSize: '0.76rem' }}>{label}</Typography>
+                </Stack>
+              ))}
+            </Stack>
+          </FooterButton>
+        )}
       </Stack>
     </Stack>
   )

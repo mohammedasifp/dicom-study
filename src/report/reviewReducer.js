@@ -72,7 +72,6 @@ export function reviewReducer(state, action) {
       const statuses = { ...state.statuses }
       const events = []
       state.suggestions
-        .filter((s) => s.section === action.section)
         .forEach((s) => {
           const current = statuses[s.id]
           const next = deriveStatus(current, s.text, action.result[s.id])

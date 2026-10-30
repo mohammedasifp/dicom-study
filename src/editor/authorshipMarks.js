@@ -127,7 +127,22 @@ export function removeSuggestion(editor, suggestionId) {
   view.dispatch(tr)
 }
 
-export function restoreSuggestion(editor, suggestion, beforeIds = []) {
+export function findSection(doc, title) {
+  let start = null
+  let end = doc.content.size
+  let lastChild = null
+  doc.forEach((node, offset) => {
+    if (node.type.name === 'heading') {
+      if (start !== null && end === doc.content.size) end = offset
+      if (node.textContent.trim().toLowerCase() === title.toLowerCase()) start = offset + node.nodeSize
+    } else if (start !== null && end === doc.content.size && offset >= start) {
+      lastChild = { node, offset }
+    }
+  })
+  return start === null ? null : { start, end, lastChild }
+}
+
+export function restoreSuggestion(editor, suggestion, beforeIds, sectionTitle) {
   const { state, view } = editor
   const { schema } = state
   const text = schema.text(suggestion.text, [schema.marks.aiText.create({ suggestionId: suggestion.id })])
@@ -135,15 +150,17 @@ export function restoreSuggestion(editor, suggestion, beforeIds = []) {
   const tr = state.tr.setMeta(PROGRAMMATIC, true)
 
   const anchor = beforeIds.map((id) => findSuggestionRanges(state.doc, id)[0]).find(Boolean)
+  const section = findSection(state.doc, sectionTitle)
   if (anchor) {
     const $pos = state.doc.resolve(anchor.from)
     const inList = $pos.depth > 1 && $pos.node($pos.depth - 1).type.name === 'listItem'
     if (inList) tr.insert($pos.before($pos.depth - 1), schema.nodes.listItem.create(null, paragraph))
     else tr.insert($pos.before($pos.depth), paragraph)
-  } else if (state.doc.lastChild && state.doc.lastChild.type.name === 'orderedList') {
-    tr.insert(state.doc.content.size - 1, schema.nodes.listItem.create(null, paragraph))
+  } else if (section && section.lastChild && section.lastChild.node.type.name === 'orderedList') {
+    const { node, offset } = section.lastChild
+    tr.insert(offset + node.nodeSize - 1, schema.nodes.listItem.create(null, paragraph))
   } else {
-    tr.insert(state.doc.content.size, paragraph)
+    tr.insert(section ? section.end : state.doc.content.size, paragraph)
   }
   view.dispatch(tr)
 }
@@ -163,7 +180,7 @@ export function focusSuggestion(editor, suggestionId) {
   editor.chain().focus(undefined, { scrollIntoView: false }).setTextSelection(ranges[0].from).run()
   const dom = editor.view.domAtPos(ranges[0].from).node
   const element = dom.nodeType === 1 ? dom : dom.parentElement
-  const block = element && element.closest('p')
+  const block = element && element.closest('p, li')
   const scroller = block && block.closest('.report-scroll')
   if (!block || !scroller) return true
   const box = block.getBoundingClientRect()
@@ -173,36 +190,67 @@ export function focusSuggestion(editor, suggestionId) {
   return true
 }
 
-export function extractRuns(doc) {
-  const blocks = []
-  doc.descendants((node, _pos, parent) => {
-    if (node.type.name !== 'paragraph') return
-    const kind = parent && parent.type.name === 'listItem' ? 'listItem' : 'paragraph'
-    const runs = []
-    node.forEach((child) => {
-      if (!child.isText) return
-      const ai = child.marks.find((m) => m.type.name === 'aiText')
-      const run = {
-        text: child.text,
-        author: ai ? 'ai' : 'reviewer',
-        suggestionId: ai ? ai.attrs.suggestionId : null,
-        bold: child.marks.some((m) => m.type.name === 'bold'),
-        italic: child.marks.some((m) => m.type.name === 'italic'),
-        underline: child.marks.some((m) => m.type.name === 'underline'),
-      }
-      const prev = runs[runs.length - 1]
-      const sameStyle =
-        prev &&
-        prev.author === run.author &&
-        prev.suggestionId === run.suggestionId &&
-        prev.bold === run.bold &&
-        prev.italic === run.italic &&
-        prev.underline === run.underline
-      if (sameStyle) prev.text += run.text
-      else runs.push(run)
-    })
-    if (runs.length) blocks.push({ kind, runs })
-    return false
+const hasMark = (node, name) => node.marks.some((m) => m.type.name === name)
+
+function paragraphRuns(node) {
+  const runs = []
+  node.forEach((child) => {
+    if (!child.isText) return
+    const ai = child.marks.find((m) => m.type.name === 'aiText')
+    const run = {
+      text: child.text,
+      author: ai ? 'ai' : hasMark(child, 'reviewerText') ? 'reviewer' : 'source',
+      suggestionId: ai ? ai.attrs.suggestionId : null,
+      bold: hasMark(child, 'bold'),
+      italic: hasMark(child, 'italic'),
+      underline: hasMark(child, 'underline'),
+    }
+    const prev = runs[runs.length - 1]
+    const same =
+      prev &&
+      ['author', 'suggestionId', 'bold', 'italic', 'underline'].every((key) => prev[key] === run[key])
+    if (same) prev.text += run.text
+    else runs.push(run)
   })
-  return blocks
+  return runs
+}
+
+const imageBlock = (node) => ({ kind: 'image', src: node.attrs.src, alt: node.attrs.alt || '', width: node.attrs.width || null })
+
+function collectBlocks(node, blocks, inList = false) {
+  if (node.type.name === 'image') {
+    blocks.push(imageBlock(node))
+    return
+  }
+  if (node.type.name === 'paragraph') {
+    const runs = paragraphRuns(node)
+    if (runs.length) blocks.push({ kind: inList ? 'listItem' : 'paragraph', runs })
+    return
+  }
+  if (node.type.name === 'table') {
+    const rows = []
+    node.forEach((row) => {
+      const cells = []
+      row.forEach((cell) => cells.push({ header: cell.type.name === 'tableHeader', text: cell.textContent }))
+      rows.push(cells)
+    })
+    blocks.push({ kind: 'table', rows })
+    return
+  }
+  node.forEach((child) => collectBlocks(child, blocks, inList || node.type.name === 'listItem'))
+}
+
+export function extractReport(doc) {
+  const sections = []
+  let current = { title: '', blocks: [] }
+  doc.forEach((node) => {
+    if (node.type.name === 'heading') {
+      if (current.title || current.blocks.length) sections.push(current)
+      current = { title: node.textContent.trim(), blocks: [] }
+      return
+    }
+    collectBlocks(node, current.blocks)
+  })
+  if (current.title || current.blocks.length) sections.push(current)
+  return sections
 }

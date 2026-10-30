@@ -4,6 +4,7 @@ import { Group, Panel, Separator } from 'react-resizable-panels'
 import { draftReport } from '../data/draftReport.js'
 import { initReview, reviewCounts, reviewReducer } from '../report/reviewReducer.js'
 import { buildStructuredReport, downloadJson } from '../report/exportReport.js'
+import { keyImageContent } from '../report/keyImages.js'
 import { focusSuggestion, removeSuggestion, restoreSuggestion, revertSuggestion } from '../editor/authorshipMarks.js'
 import WorkspaceHeader from '../components/WorkspaceHeader.jsx'
 import ReportPanel from '../components/ReportPanel.jsx'
@@ -12,16 +13,20 @@ import FinalizeDialog from '../components/FinalizeDialog.jsx'
 import HistoryDrawer from '../components/HistoryDrawer.jsx'
 import PrintableReport from '../components/PrintableReport.jsx'
 
+const SECTION_TITLES = { findings: 'Findings', impression: 'Impression' }
+
 const escapeHtml = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 const aiSpan = (s) => `<span data-suggestion-id="${s.id}">${escapeHtml(s.text)}</span>`
 
 function buildInitialContent(draft) {
   const of = (section) => draft.suggestions.filter((s) => s.section === section)
-  return {
-    findings: of('findings').map((s) => `<p>${aiSpan(s)}</p>`).join(''),
-    impression: `<ol>${of('impression').map((s) => `<li><p>${aiSpan(s)}</p></li>`).join('')}</ol>`,
-  }
+  return [
+    `<h3>Clinical history</h3><p>${escapeHtml(draft.clinicalHistory)}</p>`,
+    `<h3>Technique</h3><p>${escapeHtml(draft.technique)}</p>`,
+    `<h3>${SECTION_TITLES.findings}</h3>${of('findings').map((s) => `<p>${aiSpan(s)}</p>`).join('')}`,
+    `<h3>${SECTION_TITLES.impression}</h3><ol>${of('impression').map((s) => `<li><p>${aiSpan(s)}</p></li>`).join('')}</ol>`,
+  ].join('')
 }
 
 const PRESETS = {
@@ -29,7 +34,7 @@ const PRESETS = {
   viewer: { report: 0, viewer: 100 },
 }
 
-const splitPreset = () => (window.innerWidth < 1500 ? { report: 56, viewer: 44 } : { report: 52, viewer: 48 })
+const splitPreset = () => (window.innerWidth < 1500 ? { report: 62, viewer: 38 } : { report: 56, viewer: 44 })
 
 function layoutMode(layout) {
   if (layout.viewer < 1) return 'report'
@@ -40,60 +45,57 @@ function layoutMode(layout) {
 export default function ReportingWorkspace({ onExit }) {
   const draft = draftReport
   const initialContent = useMemo(() => buildInitialContent(draft), [draft])
-  const suggestionInfo = useMemo(
-    () => Object.fromEntries(draft.suggestions.map((s, i) => [s.id, { ...s, index: i + 1 }])),
-    [draft],
-  )
+  const suggestions = useMemo(() => draft.suggestions.map((s, i) => ({ ...s, index: i + 1 })), [draft])
+  const suggestionInfo = useMemo(() => Object.fromEntries(suggestions.map((s) => [s.id, s])), [suggestions])
   const [defaultLayout] = useState(splitPreset)
   const [review, dispatch] = useReducer(reviewReducer, draft, initReview)
-  const [fields, setFields] = useState({ clinicalHistory: draft.clinicalHistory, technique: draft.technique })
-  const [showAuthorship, setShowAuthorship] = useState(true)
-  const [activeEditor, setActiveEditor] = useState(null)
+  const [showAuthorship, setShowAuthorship] = useState(false)
+  const [editor, setEditor] = useState(null)
+  const [hoverId, setHoverId] = useState(null)
+  const [layoutTick, setLayoutTick] = useState(0)
   const [layout, setLayout] = useState('split')
+  const [keyImages, setKeyImages] = useState([])
   const [finalizeOpen, setFinalizeOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [printReport, setPrintReport] = useState(null)
   const [toast, setToast] = useState(null)
-  const editors = useRef({ findings: null, impression: null })
   const groupRef = useRef(null)
+  const tickFrame = useRef(0)
 
   const counts = reviewCounts(review.statuses)
   const readOnly = Boolean(review.finalized)
-  const active = review.activeId ? suggestionInfo[review.activeId] : null
 
-  const discarded = draft.suggestions
-    .filter((s) => review.statuses[s.id] === 'discarded')
-    .map((s) => ({ suggestion: s, index: suggestionInfo[s.id].index }))
+  const discarded = suggestions.filter((s) => review.statuses[s.id] === 'discarded').map((s) => ({ suggestion: s, index: s.index }))
 
   const changeLayout = (mode) => {
     if (groupRef.current) groupRef.current.setLayout(PRESETS[mode] || splitPreset())
     setLayout(mode)
   }
 
-  const onEditorReady = useCallback((section, editor) => {
-    editors.current[section] = editor
-    if (section === 'findings') setActiveEditor((current) => current || editor)
-  }, [])
-
-  const onEditorFocus = useCallback((_section, editor) => {
-    if (editor) setActiveEditor(editor)
-  }, [])
-
-  const onScan = useCallback((section, result) => dispatch({ type: 'scan', section, result }), [])
+  const onEditorReady = useCallback((ed) => setEditor(ed), [])
+  const onScan = useCallback((result) => dispatch({ type: 'scan', result }), [])
   const onSuggestionFocus = useCallback((id) => dispatch({ type: 'setActive', id }), [])
+  const onTransaction = useCallback(() => {
+    cancelAnimationFrame(tickFrame.current)
+    tickFrame.current = requestAnimationFrame(() => setLayoutTick((n) => n + 1))
+  }, [])
+
+  useEffect(() => {
+    const onResize = () => onTransaction()
+    window.addEventListener('resize', onResize)
+    document.fonts.ready.then(onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [onTransaction])
 
   const focus = (s) => {
     dispatch({ type: 'setActive', id: s.id })
-    const editor = editors.current[s.section]
     if (editor) focusSuggestion(editor, s.id)
   }
 
   const step = (direction, fromId = review.activeId) => {
-    const order = draft.suggestions
-    const start = order.findIndex((s) => s.id === fromId)
-    for (let i = 1; i <= order.length; i += 1) {
-      const idx = (start + direction * i + order.length * 2) % order.length
-      const candidate = order[idx]
+    const start = suggestions.findIndex((s) => s.id === fromId)
+    for (let i = 1; i <= suggestions.length; i += 1) {
+      const candidate = suggestions[(start + direction * i + suggestions.length * 2) % suggestions.length]
       if (review.statuses[candidate.id] === 'pending' && candidate.id !== fromId) {
         focus(candidate)
         return
@@ -102,19 +104,22 @@ export default function ReportingWorkspace({ onExit }) {
   }
 
   const restore = (s) => {
-    if (readOnly || review.statuses[s.id] !== 'discarded') return
-    const editor = editors.current[s.section]
-    const order = draft.suggestions.filter((x) => x.section === s.section)
-    const laterIds = order.slice(order.findIndex((x) => x.id === s.id) + 1).map((x) => x.id)
-    if (editor) restoreSuggestion(editor, s, laterIds)
+    if (readOnly || !editor || review.statuses[s.id] !== 'discarded') return
+    const sameSection = suggestions.filter((x) => x.section === s.section)
+    const laterIds = sameSection.slice(sameSection.findIndex((x) => x.id === s.id) + 1).map((x) => x.id)
+    restoreSuggestion(editor, s, laterIds, SECTION_TITLES[s.section])
     dispatch({ type: 'setActive', id: s.id })
   }
 
-  const onReviewAction = (rawAction, id) => {
-    const action = rawAction.replace(/^kb:/, '')
+  function openInViewer(s) {
+    if (!s || !s.source) return
+    dispatch({ type: 'showInViewer', id: s.id, source: s.source })
+    if (layout === 'report') changeLayout('split')
+  }
+
+  const onReviewAction = (action, id) => {
     const s = id ? suggestionInfo[id] : null
     const status = s ? review.statuses[s.id] : null
-    const editor = s ? editors.current[s.section] : null
     switch (action) {
       case 'select':
         if (s) focus(s)
@@ -137,7 +142,6 @@ export default function ReportingWorkspace({ onExit }) {
         if (status !== 'edited' || readOnly || !editor) break
         revertSuggestion(editor, s)
         dispatch({ type: 'revert', id: s.id })
-        dispatch({ type: 'setActive', id: s.id })
         break
       case 'source':
         if (s) openInViewer(s)
@@ -152,13 +156,12 @@ export default function ReportingWorkspace({ onExit }) {
     }
   }
 
-  function openInViewer(s) {
-    if (!s || !s.source) return
-    dispatch({ type: 'showInViewer', id: s.id, source: s.source })
-    if (layout === 'report') changeLayout('split')
+  const insertKeyImage = (image) => {
+    if (!editor || readOnly) return
+    editor.chain().focus().insertContent(keyImageContent(image)).run()
   }
 
-  const buildReport = () => buildStructuredReport({ draft, review, fields, editors: editors.current })
+  const buildReport = () => buildStructuredReport({ draft, review, editor })
 
   useEffect(() => {
     if (!printReport) return
@@ -188,37 +191,50 @@ export default function ReportingWorkspace({ onExit }) {
             orientation="horizontal"
             groupRef={groupRef}
             defaultLayout={defaultLayout}
-            onLayoutChanged={(next) => setLayout(layoutMode(next))}
+            onLayoutChanged={(next) => {
+              setLayout(layoutMode(next))
+              onTransaction()
+            }}
             style={{ height: '100%' }}
           >
-            <Panel id="report" minSize="34" collapsible collapsedSize={0}>
+            <Panel id="report" minSize="40" collapsible collapsedSize={0}>
               <ReportPanel
                 draft={draft}
-                fields={fields}
-                onFieldChange={(key, value) => setFields((f) => ({ ...f, [key]: value }))}
                 initialContent={initialContent}
-                suggestionInfo={suggestionInfo}
+                suggestions={suggestions}
                 statuses={review.statuses}
                 counts={counts}
                 finalized={review.finalized}
                 showAuthorship={showAuthorship}
                 onToggleAuthorship={() => setShowAuthorship((v) => !v)}
-                activeEditor={activeEditor}
+                editor={editor}
                 activeId={review.activeId}
+                hoverId={hoverId}
                 showingId={review.showingId}
+                layoutTick={layoutTick}
                 discarded={discarded}
                 onEditorReady={onEditorReady}
-                onEditorFocus={onEditorFocus}
                 onScan={onScan}
                 onSuggestionFocus={onSuggestionFocus}
                 onReviewAction={onReviewAction}
+                onHover={setHoverId}
+                onTransaction={onTransaction}
                 onRestore={restore}
                 onFinalize={() => setFinalizeOpen(true)}
               />
             </Panel>
             <Separator className="resize-handle" />
-            <Panel id="viewer" minSize="26" collapsible collapsedSize={0}>
-              <ViewerPane study={draft.study} target={review.viewerTarget} active={active} onShowInViewer={() => openInViewer(active)} />
+            <Panel id="viewer" minSize="24" collapsible collapsedSize={0}>
+              <ViewerPane
+                study={draft.study}
+                target={review.viewerTarget}
+                keyImages={keyImages}
+                onCapture={(src) =>
+                  setKeyImages((list) => [...list, { id: `${Date.now()}`, src, caption: `Key image ${list.length + 1}` }])
+                }
+                onInsertKeyImage={insertKeyImage}
+                onRemoveKeyImage={(id) => setKeyImages((list) => list.filter((img) => img.id !== id))}
+              />
             </Panel>
           </Group>
         </Box>
@@ -234,12 +250,7 @@ export default function ReportingWorkspace({ onExit }) {
           setFinalizeOpen(false)
         }}
       />
-      <HistoryDrawer
-        open={historyOpen}
-        onClose={() => setHistoryOpen(false)}
-        history={review.history}
-        suggestions={draft.suggestions}
-      />
+      <HistoryDrawer open={historyOpen} onClose={() => setHistoryOpen(false)} history={review.history} suggestions={draft.suggestions} />
       <PrintableReport report={printReport} />
       <Snackbar
         key={toast ? toast.id : 'none'}

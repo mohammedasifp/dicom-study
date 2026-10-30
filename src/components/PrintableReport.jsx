@@ -46,11 +46,35 @@ function Blocks({ blocks, refIndex }) {
     list = []
   }
   blocks.forEach((block, i) => {
-    const node = <Runs runs={block.runs} refIndex={refIndex} />
-    if (block.kind === 'listItem') list.push(<li key={i}>{node}</li>)
-    else {
-      flush()
-      out.push(<p key={i}>{node}</p>)
+    if (block.kind === 'listItem') {
+      list.push(
+        <li key={i}>
+          <Runs runs={block.runs} refIndex={refIndex} />
+        </li>,
+      )
+      return
+    }
+    flush()
+    if (block.kind === 'image') {
+      out.push(<img key={i} src={block.src} alt={block.alt} style={{ width: block.width || 300, maxWidth: '100%', display: 'block', margin: '4pt 0' }} />)
+    } else if (block.kind === 'table') {
+      out.push(
+        <table key={i} style={{ margin: '4pt 0 6pt' }}>
+          <tbody>
+            {block.rows.map((row, r) => (
+              <tr key={r}>
+                {row.map((cell, c) => (cell.header ? <th key={c}>{cell.text}</th> : <td key={c}>{cell.text}</td>))}
+              </tr>
+            ))}
+          </tbody>
+        </table>,
+      )
+    } else {
+      out.push(
+        <p key={i}>
+          <Runs runs={block.runs} refIndex={refIndex} />
+        </p>,
+      )
     }
   })
   flush()
@@ -124,14 +148,12 @@ export default function PrintableReport({ report }) {
           <sup>[n]</sup> links to image reference n · <span className="reviewer">Reviewer-written text</span>
         </p>
 
-        <h2>Clinical history</h2>
-        <p>{report.clinicalHistory}</p>
-        <h2>Technique</h2>
-        <p>{report.technique}</p>
-        <h2>Findings</h2>
-        <Blocks blocks={report.sections.findings} refIndex={refIndex} />
-        <h2>Impression</h2>
-        <Blocks blocks={report.sections.impression} refIndex={refIndex} />
+        {report.sections.map((section, i) => (
+          <div key={`${section.title}-${i}`}>
+            {section.title && <h2>{section.title}</h2>}
+            <Blocks blocks={section.blocks} refIndex={refIndex} />
+          </div>
+        ))}
 
         <h2>Image references &amp; AI suggestion review</h2>
         <table>

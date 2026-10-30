@@ -1,17 +1,13 @@
-import { extractRuns, scanSuggestions } from '../editor/authorshipMarks.js'
+import { extractReport, scanSuggestions } from '../editor/authorshipMarks.js'
 
 export const DISCLAIMER =
   'AI-assisted draft. This is not a verified diagnosis. All clinical content must be reviewed and confirmed by a qualified radiologist before use.'
 
 export const DISCLAIMER_SHORT = 'AI-assisted draft · not a diagnosis · must be reviewed by a qualified radiologist'
 
-export function buildStructuredReport({ draft, review, fields, editors }) {
-  const sections = {}
-  const scans = {}
-  Object.entries(editors).forEach(([key, editor]) => {
-    sections[key] = editor ? extractRuns(editor.state.doc) : []
-    Object.assign(scans, editor ? scanSuggestions(editor.state.doc) : {})
-  })
+export function buildStructuredReport({ draft, review, editor }) {
+  const sections = editor ? extractReport(editor.state.doc) : []
+  const scans = editor ? scanSuggestions(editor.state.doc) : {}
 
   const final = Boolean(review.finalized)
   return {
@@ -23,8 +19,6 @@ export function buildStructuredReport({ draft, review, fields, editors }) {
     model: draft.model,
     patient: draft.patient,
     study: draft.study,
-    clinicalHistory: fields.clinicalHistory,
-    technique: fields.technique,
     sections,
     suggestions: draft.suggestions.map((s) => ({
       id: s.id,

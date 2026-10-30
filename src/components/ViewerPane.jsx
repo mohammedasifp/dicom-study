@@ -1,16 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Box, Button, CircularProgress, IconButton, Stack, Tooltip, Typography } from '@mui/material'
 import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded'
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded'
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined'
-import CenterFocusStrongRoundedIcon from '@mui/icons-material/CenterFocusStrongRounded'
-import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded'
-import TouchAppOutlinedIcon from '@mui/icons-material/TouchAppOutlined'
-import RoiThumbnail from './RoiThumbnail.jsx'
+import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined'
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
 import { chrome } from '../theme.js'
-import { confidenceLevel, percent, sourceLabel } from '../report/format.js'
-
-const CONF_COLOR = { success: '#4ade80', warning: '#fbbf24', error: '#f87171' }
+import { sourceLabel } from '../report/format.js'
+import { captureViewport, setKeyImageDrag } from '../report/keyImages.js'
 
 function viewerUrl(studyInstanceUID, target) {
   const params = new URLSearchParams({ StudyInstanceUIDs: studyInstanceUID })
@@ -21,94 +18,64 @@ function viewerUrl(studyInstanceUID, target) {
   return `/ohif/viewer?${params.toString()}`
 }
 
-function EvidenceStrip({ active, target, onShowInViewer }) {
-  if (!active) {
-    return (
-      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', color: chrome.muted, minWidth: 0 }}>
-        <TouchAppOutlinedIcon sx={{ fontSize: 17 }} />
-        <Typography noWrap sx={{ fontSize: '0.76rem' }}>
-          Click a finding in the report to see its source image and region of interest
-        </Typography>
-      </Stack>
-    )
-  }
-
-  const suggestion = active
-  const { index } = active
-  const src = suggestion.source
-  const level = confidenceLevel(suggestion.confidence)
-  const showing = target && src && target.sopInstanceUID === src.sopInstanceUID
-
+function KeyImageTray({ images, onInsert, onRemove }) {
   return (
-    <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', minWidth: 0, flex: 1 }}>
-      {src && (
-        <Tooltip
-          placement="bottom-start"
-          slotProps={{ tooltip: { sx: { p: 0.5, bgcolor: '#000', maxWidth: 'none' } } }}
-          title={<RoiThumbnail source={src} roi={suggestion.roi} size={240} />}
-        >
-          <Box sx={{ cursor: 'zoom-in', lineHeight: 0 }}>
-            <RoiThumbnail source={src} roi={suggestion.roi} size={40} compact />
-          </Box>
-        </Tooltip>
-      )}
-      <Box sx={{ minWidth: 0, flex: 1 }}>
-        <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center', minWidth: 0 }}>
+    <Stack
+      direction="row"
+      spacing={1}
+      sx={{ alignItems: 'center', px: 1.5, py: 0.75, bgcolor: chrome.surface, borderBottom: `1px solid ${chrome.border}`, overflowX: 'auto', flexShrink: 0 }}
+    >
+      <Typography sx={{ fontSize: '0.66rem', fontWeight: 700, letterSpacing: '0.06em', color: chrome.muted, whiteSpace: 'nowrap', pr: 0.5 }}>
+        KEY IMAGES
+        <br />
+        <Box component="span" sx={{ fontWeight: 500, letterSpacing: 0 }}>
+          drag into report
+        </Box>
+      </Typography>
+      {images.map((img) => (
+        <Tooltip key={img.id} title={`${img.caption} · drag into the report, or click to insert at the cursor`}>
           <Box
+            draggable
+            onDragStart={(e) => setKeyImageDrag(e, img)}
+            onClick={() => onInsert(img)}
             sx={{
-              px: 0.6,
-              borderRadius: 1,
-              bgcolor: '#7c3aed',
-              color: '#fff',
-              fontSize: '0.66rem',
-              fontWeight: 700,
-              lineHeight: '17px',
+              position: 'relative',
+              width: 56,
+              height: 56,
               flexShrink: 0,
+              borderRadius: 1,
+              overflow: 'hidden',
+              border: '1px solid #2b3852',
+              cursor: 'grab',
+              bgcolor: '#000',
+              '&:hover': { borderColor: '#a78bfa' },
+              '&:hover .remove': { opacity: 1 },
             }}
           >
-            {index}
+            <img src={img.src} alt={img.caption} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <IconButton
+              className="remove"
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation()
+                onRemove(img.id)
+              }}
+              sx={{ position: 'absolute', top: 1, right: 1, width: 18, height: 18, opacity: 0, bgcolor: 'rgba(0,0,0,0.7)', color: '#fff', '&:hover': { bgcolor: '#000' } }}
+            >
+              <CloseRoundedIcon sx={{ fontSize: 12 }} />
+            </IconButton>
           </Box>
-          <Typography noWrap sx={{ fontSize: '0.8rem', fontWeight: 650, color: chrome.text }}>
-            {suggestion.observation}
-          </Typography>
-          <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: CONF_COLOR[level.color], flexShrink: 0 }}>
-            {percent(suggestion.confidence)}
-          </Typography>
-          {suggestion.limitation && (
-            <Tooltip title={suggestion.limitation}>
-              <WarningAmberRoundedIcon sx={{ fontSize: 15, color: '#fbbf24', flexShrink: 0 }} />
-            </Tooltip>
-          )}
-        </Stack>
-        <Typography noWrap sx={{ fontSize: '0.7rem', color: chrome.muted, mt: 0.25 }}>
-          {src ? `${sourceLabel(src)}${suggestion.roi ? ' · ROI marked' : ' · no localisation'}` : 'Study-level suggestion, no source image'}
-        </Typography>
-      </Box>
-      {src && (
-        <Button
-          size="small"
-          variant={showing ? 'text' : 'outlined'}
-          startIcon={<CenterFocusStrongRoundedIcon />}
-          disabled={showing}
-          onClick={onShowInViewer}
-          sx={{
-            flexShrink: 0,
-            color: '#ddd6fe',
-            borderColor: '#4c3a8a',
-            '&:hover': { borderColor: '#a78bfa', bgcolor: 'rgba(124,58,237,0.18)' },
-            '&.Mui-disabled': { color: chrome.muted },
-          }}
-        >
-          {showing ? 'Showing' : 'Show image'}
-        </Button>
-      )}
+        </Tooltip>
+      ))}
     </Stack>
   )
 }
 
-export default function ViewerPane({ study, target, active, onShowInViewer }) {
+export default function ViewerPane({ study, target, keyImages, onCapture, onInsertKeyImage, onRemoveKeyImage }) {
   const [status, setStatus] = useState('checking')
   const [attempt, setAttempt] = useState(0)
+  const [flash, setFlash] = useState(false)
+  const iframeRef = useRef(null)
 
   useEffect(() => {
     let cancelled = false
@@ -123,15 +90,39 @@ export default function ViewerPane({ study, target, active, onShowInViewer }) {
 
   const src = viewerUrl(study.studyInstanceUID, target)
 
+  const capture = () => {
+    const dataUrl = captureViewport(iframeRef.current)
+    if (!dataUrl) return
+    onCapture(dataUrl)
+    setFlash(true)
+    setTimeout(() => setFlash(false), 180)
+  }
+
   return (
     <Stack sx={{ height: '100%', bgcolor: '#000', minWidth: 0 }}>
       <Stack
         direction="row"
         spacing={1}
-        sx={{ alignItems: 'center', px: 1.5, height: 58, flexShrink: 0, bgcolor: chrome.surface, borderBottom: `1px solid ${chrome.border}` }}
+        sx={{ alignItems: 'center', px: 1.5, height: 46, flexShrink: 0, bgcolor: chrome.surface, borderBottom: `1px solid ${chrome.border}` }}
       >
-        <EvidenceStrip active={active} target={target} onShowInViewer={onShowInViewer} />
-        <Box sx={{ flex: active ? 0 : 1 }} />
+        <Typography sx={{ fontSize: '0.8rem', fontWeight: 650, color: chrome.text, whiteSpace: 'nowrap' }}>Images</Typography>
+        <Typography noWrap sx={{ fontSize: '0.72rem', color: chrome.muted, flex: 1, minWidth: 0 }}>
+          {target ? `Showing ${sourceLabel(target)}` : study.description}
+        </Typography>
+        <Tooltip title="Capture the current view as a key image">
+          <span>
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={<PhotoCameraOutlinedIcon />}
+              disabled={status !== 'ready'}
+              onClick={capture}
+              sx={{ flexShrink: 0, color: '#ddd6fe', borderColor: '#4c3a8a', '&:hover': { borderColor: '#a78bfa', bgcolor: 'rgba(124,58,237,0.18)' } }}
+            >
+              Key image
+            </Button>
+          </span>
+        </Tooltip>
         <Tooltip title="Reload viewer">
           <IconButton
             size="small"
@@ -151,15 +142,19 @@ export default function ViewerPane({ study, target, active, onShowInViewer }) {
         </Tooltip>
       </Stack>
 
+      {keyImages.length > 0 && <KeyImageTray images={keyImages} onInsert={onInsertKeyImage} onRemove={onRemoveKeyImage} />}
+
       <Box sx={{ flex: 1, position: 'relative' }}>
         {status === 'ready' && (
           <iframe
+            ref={iframeRef}
             key={`${src}#${attempt}`}
             title="OHIF viewer"
             src={src}
             style={{ border: 0, width: '100%', height: '100%', display: 'block' }}
           />
         )}
+        {flash && <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(255,255,255,0.35)', pointerEvents: 'none' }} />}
         {status === 'checking' && (
           <Stack spacing={1.5} sx={{ alignItems: 'center', justifyContent: 'center', height: '100%', color: chrome.muted }}>
             <CircularProgress size={24} sx={{ color: chrome.muted }} />
