@@ -1,6 +1,7 @@
 import { listStudies as listBackendStudies, getStudy as getBackendStudy } from './backend.js'
 import { ageAt, toIsoDate } from './adapter.js'
 import { mockCurrentUserId, mockRadiologists } from '../data/mock/radiologists.js'
+import { readSession } from '../auth/session.js'
 import { applyAssignment, applyStartReporting } from '../worklist/statusTransitions.js'
 import { AI_DRAFT_STATUS as AI, PRIORITY, STUDY_STATUS as S } from '../constants/study.js'
 
@@ -61,7 +62,7 @@ export const backendWorklistApi = {
   getStudy: async (id) => toWorklistStudy(await getBackendStudy(id)),
   // BACKEND SPEC (B10): GET /api/radiologists and GET /api/me; the mock list stands in until then.
   listRadiologists: async () => mockRadiologists,
-  getCurrentUser: async () => mockRadiologists.find((r) => r.id === mockCurrentUserId),
+  getCurrentUser: async () => mockRadiologists.find((r) => r.id === (readSession()?.user.id || mockCurrentUserId)),
   assignStudy: async (id, radiologistId) => {
     if (radiologistId) assignments.set(id, radiologistId)
     else assignments.delete(id)
