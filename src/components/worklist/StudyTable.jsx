@@ -10,19 +10,22 @@ import StudyActions from './StudyActions.jsx'
 
 // Columns fill the available width without horizontal scrolling. Compact columns have a fixed size
 // that fits their content; text-heavy columns share the remaining space by weight (fr) above a minimum.
-// Minimums add up to ~1094px, so the table is used from the `lg` breakpoint and cards below it.
+// Minimums add up to ~1158px, so the table is used from the `lg` breakpoint and cards below it.
 const COLUMNS = [
   { id: 'priority', sortField: 'priority', track: '84px' },
   { id: 'patient', sortField: 'patient', track: 'minmax(141px, 1.4fr)' },
-  { id: 'modality', sortField: 'modality', track: '60px', align: 'center' },
+  { id: 'modality', sortField: 'modality', track: '100px', align: 'center' },
   { id: 'study', sortField: 'description', track: 'minmax(145px, 1.6fr)' },
-  { id: 'acquired', sortField: 'studyDateTime', track: '80px' },
+  { id: 'acquired', sortField: 'studyDateTime', track: '104px' },
   { id: 'waiting', sortField: 'waiting', track: '88px' },
   { id: 'status', sortField: 'status', track: '124px' },
   { id: 'assignedTo', sortField: 'assignedTo', track: 'minmax(104px, 1fr)' },
   { id: 'referringDoctor', sortField: 'referringDoctor', track: 'minmax(84px, 0.9fr)' },
   { id: 'actions', track: '184px', align: 'right' },
 ]
+
+// Space between the app bar and the pinned table header while scrolling, in px.
+const STICKY_GAP = 12
 
 // Each row is its own grid with the same template; tracks resolve identically, so columns line up.
 const rowGrid = { display: 'grid', gridTemplateColumns: COLUMNS.map((c) => c.track).join(' ') }
@@ -122,7 +125,20 @@ export default function StudyTable({ studies, now, sort, onSortChange, radiologi
     // Rendered as divs with a CSS grid per row; ARIA roles keep the table semantics for assistive tech.
     <Table component="div" role="table" aria-label={t('worklist.tableLabel')} sx={{ display: 'block', width: '100%' }}>
       {/* Sticks to the page scroll container so the header stays visible through long lists. */}
-      <TableHead component="div" role="rowgroup" sx={{ display: 'block', position: 'sticky', top: 0, zIndex: 2 }}>
+      {/* Pinned STICKY_GAP px below the app bar; ::before paints that gap in the page colour so rows scrolling
+          underneath don't show through it. */}
+      <TableHead
+        component="div"
+        role="rowgroup"
+        sx={{
+          display: 'block',
+          position: 'sticky',
+          top: STICKY_GAP,
+          zIndex: 2,
+          boxShadow: '0 4px 8px -4px rgba(30,41,59,0.25)',
+          '&::before': { content: '""', position: 'absolute', left: 0, right: 0, bottom: '100%', height: STICKY_GAP, bgcolor: 'background.default' },
+        }}
+      >
         <TableRow component="div" role="row" sx={{ ...rowGrid, height: table.headerHeight, bgcolor: table.headerBg }}>
           {COLUMNS.map((col) => (
             <TableCell
@@ -148,6 +164,8 @@ export default function StudyTable({ studies, now, sort, onSortChange, radiologi
                   sx={{
                     color: 'inherit',
                     maxWidth: '100%',
+                    // MUI's default `flexDirection: inherit` picks up the cell's column layout and drops the arrow below the label.
+                    flexDirection: 'row',
                     '&:hover, &:focus-visible': { color: table.headerMuted },
                     '&.Mui-active': { color: table.headerText },
                     '& .MuiTableSortLabel-icon': { color: `${table.headerMuted} !important`, mx: 0.25 },

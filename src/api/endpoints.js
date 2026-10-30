@@ -8,4 +8,6 @@ export const endpoints = {
   reportDraft: (id) => `/api/worklist/studies/${encodeURIComponent(id)}/report-draft`,
   radiologists: '/api/radiologists',
   currentUser: '/api/me',
+  login: '/api/auth/login',
+  logout: '/api/auth/logout',
 }

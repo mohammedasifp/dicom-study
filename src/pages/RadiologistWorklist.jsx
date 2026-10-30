@@ -26,7 +26,7 @@ import { colors, layout, shadows } from '../styles/tokens.js'
 const ROWS_PER_PAGE = [25, 50, 100]
 const DEFAULT_VIEW = { queue: DEFAULT_QUEUE, filters: EMPTY_FILTERS, sort: TRIAGE_SORT, rowsPerPage: ROWS_PER_PAGE[0], advancedOpen: false }
 
-export default function RadiologistWorklist({ onOpenStudy, onHome }) {
+export default function RadiologistWorklist({ onOpenStudy, onHome, onLogout }) {
   const { t } = useI18n()
   const theme = useTheme()
   // The full-width table needs ~1150px; narrower screens get the card list and the queue chips.
@@ -122,7 +122,7 @@ export default function RadiologistWorklist({ onOpenStudy, onHome }) {
 
   return (
     <Stack sx={{ height: '100%', bgcolor: 'background.default' }}>
-      <WorklistAppBar currentUser={worklist.currentUser} refreshing={worklist.refreshing} onRefresh={worklist.refresh} onHome={onHome} />
+      <WorklistAppBar currentUser={worklist.currentUser} refreshing={worklist.refreshing} onRefresh={worklist.refresh} onHome={onHome} onLogout={onLogout} />
 
       <Box sx={{ flex: 1, minHeight: 0, display: 'flex' }}>
         {showSidebar && (
@@ -131,8 +131,9 @@ export default function RadiologistWorklist({ onOpenStudy, onHome }) {
           </Box>
         )}
 
-        <Box component="main" sx={{ flex: 1, minWidth: 0, overflowY: 'auto', p: { xs: 1.5, md: 2 } }}>
-          <Stack spacing={2} sx={{ maxWidth: 1800, mx: 'auto' }}>
+        {/* No padding on the scroll container itself: sticky headers stick at its padding edge, which would leave a gap. */}
+        <Box component="main" sx={{ flex: 1, minWidth: 0, overflowY: 'auto' }}>
+          <Stack spacing={2} sx={{ maxWidth: 1800, mx: 'auto', p: { xs: 1.5, md: 2 } }}>
             {worklist.status === 'ready' && <SummaryCards stats={derived.stats} activeQueue={view.queue} onSelectQueue={(queue) => updateView({ queue })} />}
 
             {!showSidebar && <QueueNav variant="chips" value={view.queue} counts={derived.counts} onChange={(queue) => updateView({ queue })} />}

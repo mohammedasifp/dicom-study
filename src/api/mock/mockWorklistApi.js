@@ -3,6 +3,7 @@ import { mockCurrentUserId, mockRadiologists } from '../../data/mock/radiologist
 import { draftReport } from '../../data/draftReport.js'
 import { appConfig } from '../../config/appConfig.js'
 import { ApiError } from '../httpClient.js'
+import { readSession } from '../../auth/session.js'
 import { draftFromStudy } from '../../report/draftFromStudy.js'
 import { applyAssignment, applyCompleteReport, applyReopenReport, applyStartReporting } from '../../worklist/statusTransitions.js'
 
@@ -33,7 +34,7 @@ export const mockWorklistApi = {
   listStudies: () => delay(store()),
   getStudy: async (id) => delay(find(id)),
   listRadiologists: () => delay(mockRadiologists),
-  getCurrentUser: () => delay(mockRadiologists.find((r) => r.id === mockCurrentUserId)),
+  getCurrentUser: () => delay(mockRadiologists.find((r) => r.id === (readSession()?.user.id || mockCurrentUserId))),
   assignStudy: async (id, radiologistId) => update(id, (s) => applyAssignment(s, radiologistId)),
   startReporting: async (id, userId) => update(id, (s) => applyStartReporting(s, userId)),
   completeReport: async (id) => update(id, (s) => applyCompleteReport(s, new Date().toISOString())),

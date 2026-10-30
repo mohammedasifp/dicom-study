@@ -6,6 +6,7 @@ import { theme } from './theme.js'
 import './index.css'
 import I18nProvider from './i18n/I18nProvider.jsx'
 import NotificationProvider from './components/common/NotificationProvider.jsx'
+import AuthProvider from './auth/AuthProvider.jsx'
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
@@ -14,7 +15,9 @@ createRoot(document.getElementById('root')).render(
       <CssBaseline />
       <I18nProvider>
         <NotificationProvider>
-          <App />
+          <AuthProvider>
+            <App />
+          </AuthProvider>
         </NotificationProvider>
       </I18nProvider>
     </ThemeProvider>
