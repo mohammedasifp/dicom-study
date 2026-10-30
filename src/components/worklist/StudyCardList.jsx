@@ -3,7 +3,7 @@ import { useI18n } from '../../i18n/I18nContext.js'
 import { formatDateTime } from '../../i18n/format.js'
 import { PRIORITY } from '../../constants/study.js'
 import { colors, priorityColors, typography } from '../../styles/tokens.js'
-import { canOpenReport, isFinalized } from '../../worklist/reviewWorkflow.js'
+import { isFinalized } from '../../worklist/reviewWorkflow.js'
 import { AiReportStatusBadge, ModalityBadge, PriorityBadge, ReviewStatusBadge } from './StudyBadges.jsx'
 import { AssigneeLabel } from './Assignment.jsx'
 import SlaTimer from './SlaTimer.jsx'
@@ -16,23 +16,16 @@ export default function StudyCardList({ studies, now, radiologists, radiologists
     <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 1, display: 'grid', gap: 1, gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' } }} aria-label={t('worklist.tableLabel')}>
       {studies.map((study) => {
         const completed = isFinalized(study)
-        const openable = canOpenReport(study)
         return (
           <Paper
             component="li"
             key={study.id}
-            tabIndex={0}
-            onClick={() => openable && onOpen(study)}
-            onKeyDown={(e) => openable && e.key === 'Enter' && e.target === e.currentTarget && onOpen(study)}
-            aria-label={t(openable ? 'worklist.openStudy' : 'worklist.awaitingAiStudy', { patient: study.patient.name, study: study.description })}
             sx={{
               p: 1.5,
-              cursor: openable ? 'pointer' : 'default',
               border: 1,
               borderColor: 'divider',
               borderLeft: `4px solid ${priorityColors[study.priority].bar === 'transparent' ? colors.border.default : priorityColors[study.priority].bar}`,
               bgcolor: study.priority === PRIORITY.STAT && !completed ? colors.danger.light : 'background.paper',
-              '&:focus-visible': { outline: `2px solid ${colors.border.focus}` },
             }}
           >
             <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start', justifyContent: 'space-between' }}>

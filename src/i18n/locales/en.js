@@ -53,8 +53,6 @@ const en = {
     emptyFiltered: 'No studies match the current view and filters. Clear the filters to see more.',
     emptyQueue: 'This list is empty right now.',
     tableLabel: 'Imaging studies',
-    openStudy: 'Open report for {{patient}}, {{study}}',
-    awaitingAiStudy: '{{patient}}, {{study}}. AI report is being generated',
     resultCount: { zero: 'No studies', one: '1 study', other: '{{count}} studies' },
   },
   queues: {

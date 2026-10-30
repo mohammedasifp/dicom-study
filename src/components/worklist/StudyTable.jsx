@@ -3,7 +3,7 @@ import { useI18n } from '../../i18n/I18nContext.js'
 import { formatDate, formatDayMonth, formatTime } from '../../i18n/format.js'
 import { PRIORITY } from '../../constants/study.js'
 import { colors, priorityColors, table, typography } from '../../styles/tokens.js'
-import { canOpenReport, isFinalized } from '../../worklist/reviewWorkflow.js'
+import { isFinalized } from '../../worklist/reviewWorkflow.js'
 import { AiReportStatusBadge, ModalityBadge, PriorityBadge, ReviewStatusBadge } from './StudyBadges.jsx'
 import { AssigneeLabel } from './Assignment.jsx'
 import SlaTimer from './SlaTimer.jsx'
@@ -191,27 +191,19 @@ export default function StudyTable({ studies, now, sort, onSortChange, radiologi
         {studies.map((study, index) => {
           const completed = isFinalized(study)
           const stat = study.priority === PRIORITY.STAT && !completed
-          // Rows open the report only once AI has finished; while it is working the row is informational.
-          const openable = canOpenReport(study)
           return (
             <TableRow
               key={study.id}
               component="div"
               role="row"
-              tabIndex={0}
-              onClick={() => openable && onOpen(study)}
-              onKeyDown={(e) => openable && e.key === 'Enter' && e.target === e.currentTarget && onOpen(study)}
-              aria-label={t(openable ? 'worklist.openStudy' : 'worklist.awaitingAiStudy', { patient: study.patient.name, study: study.description })}
               sx={{
                 ...rowGrid,
                 height: table.rowHeight,
-                cursor: openable ? 'pointer' : 'default',
                 bgcolor: stat ? table.statRowBg : index % 2 ? table.rowStripeBg : table.rowBg,
                 borderBottom: `1px solid ${table.gridLine}`,
                 boxShadow: `inset 4px 0 0 ${priorityColors[study.priority].bar}`,
                 transition: 'background-color 80ms',
                 '&:hover': { bgcolor: stat ? table.statRowHoverBg : table.rowHoverBg },
-                '&:focus-visible': { bgcolor: table.rowHoverBg, outline: `2px solid ${colors.border.focus}`, outlineOffset: -2 },
               }}
             >
               {COLUMNS.map((col) => (
