@@ -7,6 +7,8 @@ export const appConfig = {
   apiBaseUrl: env.VITE_API_BASE_URL || '',
   // Worklist data source: 'backend' (dicom-study-backend /api/studies), 'mock' (in-browser data) or 'http' (api/endpoints.js contract).
   worklistSource: env.VITE_WORKLIST_SOURCE || (env.VITE_USE_MOCK_API === 'true' ? 'mock' : 'backend'),
+  // Sign-in: 'backend' (backend radiologists, demo password), 'mock' (data/mock/accounts.js) or 'http' (api/endpoints.js).
+  authSource: env.VITE_AUTH_SOURCE || (env.VITE_WORKLIST_SOURCE === 'mock' || env.VITE_USE_MOCK_API === 'true' ? 'mock' : 'backend'),
   // Simulated network latency for the mock API, in ms.
   mockLatencyMs: Number(env.VITE_MOCK_LATENCY_MS ?? 350),
   requestTimeoutMs: 20000,
