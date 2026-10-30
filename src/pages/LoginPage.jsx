@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { keyframes } from '@emotion/react'
 import { Alert, Box, Button, CircularProgress, IconButton, InputAdornment, Stack, TextField, Typography } from '@mui/material'
 import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded'
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
@@ -14,17 +15,26 @@ import { brand, colors, typography } from '../styles/tokens.js'
 const INVALID_CREDENTIAL_CODES = ['INVALID_CREDENTIALS', 'UNAUTHORIZED']
 
 // Imaging-viewer reticle drawn behind the headline.
+// Around the centre: the dashed ring and crosshair lines turn clockwise, the corner brackets anticlockwise.
+const spin = keyframes`to { transform: rotate(360deg); }`
+const rotating = (seconds, direction) => ({
+  transformBox: 'view-box',
+  transformOrigin: '320px 320px',
+  animation: `${spin} ${seconds}s linear infinite ${direction}`,
+  '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
+})
+
 function Reticle({ sx }) {
   return (
     <Box component="svg" viewBox="0 0 640 640" fill="none" aria-hidden="true" sx={{ position: 'absolute', pointerEvents: 'none', ...sx }}>
       <g stroke={brand.softAqua}>
         <circle cx="320" cy="320" r="300" strokeOpacity=".10" />
         <circle cx="320" cy="320" r="230" strokeOpacity=".16" />
-        <circle cx="320" cy="320" r="160" strokeOpacity=".24" strokeDasharray="4 10" />
+        <Box component="circle" cx="320" cy="320" r="160" strokeOpacity=".24" strokeDasharray="4 10" sx={rotating(40, 'normal')} />
         <circle cx="320" cy="320" r="90" strokeOpacity=".34" />
         <circle cx="320" cy="320" r="6" fill={brand.softAqua} fillOpacity=".6" stroke="none" />
-        <path d="M320 10v120M320 510v120M10 320h120M510 320h120" strokeOpacity=".28" />
-        <path d="M230 180h-50v50M410 180h50v50M230 460h-50v-50M410 460h50v-50" strokeOpacity=".5" strokeWidth="2" />
+        <Box component="path" d="M320 10v120M320 510v120M10 320h120M510 320h120" strokeOpacity=".28" sx={rotating(60, 'normal')} />
+        <Box component="path" d="M230 180h-50v50M410 180h50v50M230 460h-50v-50M410 460h50v-50" strokeOpacity=".5" strokeWidth="2" sx={rotating(28, 'reverse')} />
       </g>
     </Box>
   )
