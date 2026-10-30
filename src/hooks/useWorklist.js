@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { assignStudy, getCurrentUser, listRadiologists, listStudies } from '../api/worklistService.js'
+import { assignStudy, deleteStudy, getCurrentUser, listRadiologists, listStudies } from '../api/worklistService.js'
 import { errorMessageKey } from '../api/errors.js'
 import { appConfig } from '../config/appConfig.js'
 import { AI_REPORT_STATUS } from '../constants/study.js'
@@ -82,6 +82,25 @@ export function useWorklist() {
     [notify, t, radiologistsById],
   )
 
+  const remove = useCallback(
+    async (study) => {
+      if (busyRef.current.has(study.id)) return
+      busyRef.current.add(study.id)
+      setBusyIds([...busyRef.current])
+      try {
+        await deleteStudy(study.id)
+        setState((s) => ({ ...s, studies: s.studies.filter((st) => st.id !== study.id) }))
+        notify({ severity: 'success', message: t('deleteStudy.done', { patient: study.patient.name }) })
+      } catch (error) {
+        notify({ severity: 'error', message: t('deleteStudy.failed', { reason: error.message || t(errorMessageKey(error)) }) })
+      } finally {
+        busyRef.current.delete(study.id)
+        setBusyIds([...busyRef.current])
+      }
+    },
+    [notify, t],
+  )
+
   return {
     ...state,
     radiologistsById,
@@ -89,6 +108,7 @@ export function useWorklist() {
     busyIds,
     refresh: () => load({ background: state.status === 'ready' }),
     assign,
+    remove,
   }
 }
 

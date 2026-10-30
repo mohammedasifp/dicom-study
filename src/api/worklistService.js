@@ -10,3 +10,4 @@ export const listRadiologists = () => api.listRadiologists()
 export const getCurrentUser = () => api.getCurrentUser()
 /** radiologistId null = unassign. @returns {Promise<import('./models.js').Study>} */
 export const assignStudy = (id, radiologistId) => api.assignStudy(id, radiologistId)
+export const deleteStudy = (id) => api.deleteStudy(id)

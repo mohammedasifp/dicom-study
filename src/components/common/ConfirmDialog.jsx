@@ -1,7 +1,7 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material'
 import { useI18n } from '../../i18n/I18nContext.js'
 
-export default function ConfirmDialog({ open, title, message, confirmLabel, onConfirm, onCancel }) {
+export default function ConfirmDialog({ open, title, message, confirmLabel, confirmColor = 'primary', onConfirm, onCancel }) {
   const { t } = useI18n()
   return (
     <Dialog open={open} onClose={onCancel} maxWidth="xs" fullWidth aria-labelledby="confirm-dialog-title">
@@ -15,7 +15,7 @@ export default function ConfirmDialog({ open, title, message, confirmLabel, onCo
         <Button onClick={onCancel} color="inherit">
           {t('common.cancel')}
         </Button>
-        <Button onClick={onConfirm} variant="contained" autoFocus>
+        <Button onClick={onConfirm} variant="contained" color={confirmColor} autoFocus>
           {confirmLabel || t('common.confirm')}
         </Button>
       </DialogActions>

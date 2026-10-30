@@ -219,7 +219,7 @@ const en = {
     awaitingAi: 'Available when the AI report is ready. AI runs automatically once the study arrives',
   },
   assignment: {
-    menu: 'Assignment options',
+    menu: 'More actions',
     you: 'You',
     unassigned: 'Unassigned',
     assignToMe: 'Assign to me',
@@ -233,6 +233,15 @@ const en = {
     confirmTitle: 'Change assignment?',
     confirmReassign: '{{patient}} is currently assigned to {{current}}. Reassign it to {{next}}?',
     confirmUnassign: '{{patient}} is currently assigned to {{current}}. Remove the assignment?',
+  },
+  deleteStudy: {
+    action: 'Delete study',
+    aiRunning: 'Available when the AI finishes',
+    confirmTitle: 'Delete this study?',
+    confirmMessage:
+      '{{study}} for {{patient}} will be removed from the worklist, with its report draft and report images. This cannot be undone. The images stay in PACS.',
+    done: '{{patient}} removed from the worklist',
+    failed: 'The study was not deleted. {{reason}}',
   },
 }
 

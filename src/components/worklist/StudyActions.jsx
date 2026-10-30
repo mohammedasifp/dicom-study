@@ -18,7 +18,7 @@ const ACTION_ICONS = {
 
 // Row actions: open the report editor, open images in OHIF, assignment menu.
 // The editor opens only once the AI service has finished; there is deliberately no way to start AI processing here.
-export default function StudyActions({ study, radiologists, currentUserId, busy, onOpen, onAssign, fullWidth = false }) {
+export default function StudyActions({ study, radiologists, currentUserId, busy, onOpen, onAssign, onDelete, fullWidth = false }) {
   const { t } = useI18n()
   const stop = (e) => e.stopPropagation()
   const action = reportAction(study)
@@ -61,7 +61,7 @@ export default function StudyActions({ study, radiologists, currentUserId, busy,
           </IconButton>
         </span>
       </Tooltip>
-      <AssignMenu study={study} radiologists={radiologists} currentUserId={currentUserId} busy={busy} onAssign={(id) => onAssign(study.id, id)} />
+      <AssignMenu study={study} radiologists={radiologists} currentUserId={currentUserId} busy={busy} onAssign={(id) => onAssign(study.id, id)} onDelete={() => onDelete(study)} />
     </Stack>
   )
 }

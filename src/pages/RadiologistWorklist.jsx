@@ -37,6 +37,7 @@ export default function RadiologistWorklist({ onOpenStudy, onHome, onLogout }) {
   const [view, setView] = useSessionState('svaim.worklist.view', DEFAULT_VIEW)
   const [page, setPage] = useState(0)
   const [pendingAssign, setPendingAssign] = useState(null)
+  const [pendingDelete, setPendingDelete] = useState(null)
   // Search text can contain patient identifiers, so it is kept in memory only (not in sessionStorage).
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebouncedValue(search, 250)
@@ -97,6 +98,7 @@ export default function RadiologistWorklist({ onOpenStudy, onHome, onLogout }) {
     busyIds: worklist.busyIds,
     onOpen: (study) => onOpenStudy(study.id),
     onAssign: requestAssign,
+    onDelete: setPendingDelete,
   }
 
   let content
@@ -210,6 +212,19 @@ export default function RadiologistWorklist({ onOpenStudy, onHome, onLogout }) {
         onConfirm={() => {
           worklist.assign(pendingAssign.study.id, pendingAssign.radiologistId)
           setPendingAssign(null)
+        }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        title={t('deleteStudy.confirmTitle')}
+        message={pendingDelete && t('deleteStudy.confirmMessage', { patient: pendingDelete.patient.name, study: pendingDelete.description })}
+        confirmLabel={t('deleteStudy.action')}
+        confirmColor="error"
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={() => {
+          worklist.remove(pendingDelete)
+          setPendingDelete(null)
         }}
       />
     </Stack>

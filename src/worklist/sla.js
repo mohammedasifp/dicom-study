@@ -4,7 +4,7 @@ const minutesBetween = (fromIso, toMs) => (toMs - new Date(fromIso).getTime()) /
 
 // Turnaround against the priority's target, from acquisition to sign-off. Finalized studies report their final TAT.
 export function slaInfo(study, now) {
-  const targetMinutes = SLA_TARGET_MINUTES[study.priority]
+  const targetMinutes = study.slaTargetMinutes || SLA_TARGET_MINUTES[study.priority]
   if (study.reviewStatus === REVIEW_STATUS.FINALIZED) {
     const end = study.reportedAt ? new Date(study.reportedAt).getTime() : now
     const elapsedMinutes = minutesBetween(study.studyDateTime, end)

@@ -1,5 +1,6 @@
 import {
   assignRadiologist,
+  deleteStudy as deleteBackendStudy,
   getCurrentRadiologist,
   getStudy as getBackendStudy,
   listRadiologists as listBackendRadiologists,
@@ -27,7 +28,12 @@ function toWorklistStudy(s) {
   const patient = s.patient || {}
   const ai = s.ai || {}
   const mapped = STATUS[s.status] || { ai: AI.RECEIVED, review: R.PENDING_REVIEW }
-  const reviewStatus = mapped.review === R.PENDING_REVIEW && s.viewed && s.viewed.isViewed ? R.UNDER_REVIEW : mapped.review
+  const review = s.review || { total: 0, decided: 0 }
+  let reviewStatus = mapped.review
+  if (reviewStatus === R.PENDING_REVIEW && review.total > 0 && review.decided === review.total) reviewStatus = R.REVIEWED
+  else if (reviewStatus === R.PENDING_REVIEW && s.viewed && s.viewed.isViewed) reviewStatus = R.UNDER_REVIEW
+  const studyDateTime = toIsoDateTime(s.studyDate, s.studyTime) || s.updatedAt
+  const slaDueAt = s.sla && s.sla.dueAt
   const study = {
     id: s.studyInstanceUid,
     studyInstanceUID: s.studyInstanceUid,
@@ -42,14 +48,14 @@ function toWorklistStudy(s) {
     modality: s.modality === 'CR' || s.modality === 'DX' ? 'XR' : s.modality,
     description: s.description || [s.modality, s.bodyPart].filter(Boolean).join(' '),
     bodyPart: s.bodyPart || '',
-    studyDateTime: toIsoDateTime(s.studyDate, s.studyTime) || s.updatedAt,
+    studyDateTime,
+    slaTargetMinutes: slaDueAt ? (new Date(slaDueAt).getTime() - new Date(studyDateTime).getTime()) / 60000 : null,
     referringDoctor: s.referringPhysician || '-',
     priority: s.priority || PRIORITY.ROUTINE,
     assignedTo: null,
     aiReportStatus: mapped.ai,
-    aiReportUpdatedAt: ai.completedAt || ai.startedAt || s.updatedAt,
-    aiFailureReason: mapped.ai === AI.FAILED ? AI_FAILURE_REASON.PROCESSING_ERROR : null,
-    // The backend reports failures as free text; shown instead of the generic reason when present.
+    aiReportUpdatedAt: ai.completedAt || ai.requestedAt || s.updatedAt,
+    aiFailureReason: mapped.ai === AI.FAILED ? ai.failureReason || AI_FAILURE_REASON.PROCESSING_ERROR : null,
     aiFailureMessage: mapped.ai === AI.FAILED ? ai.error || null : null,
     reviewStatus,
     imagesAvailable: (s.instanceCount || 0) > 0,
@@ -67,4 +73,5 @@ export const backendWorklistApi = {
   listRadiologists: async () => (await listBackendRadiologists()).map(toRadiologist),
   getCurrentUser: async () => toRadiologist(await getCurrentRadiologist()),
   assignStudy: async (id, radiologistId) => toWorklistStudy(await assignRadiologist(id, radiologistId || null)),
+  deleteStudy: (id) => deleteBackendStudy(id),
 }

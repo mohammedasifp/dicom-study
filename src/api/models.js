@@ -23,6 +23,7 @@
  * @property {string} description
  * @property {string} bodyPart
  * @property {string} studyDateTime  ISO 8601, acquisition time
+ * @property {number|null} slaTargetMinutes  From the SLA a radiologist set; null = the priority's default target
  * @property {string} referringDoctor
  * @property {Priority} priority
  * @property {string|null} assignedTo  Radiologist id

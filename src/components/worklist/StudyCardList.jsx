@@ -10,7 +10,7 @@ import SlaTimer from './SlaTimer.jsx'
 import StudyActions from './StudyActions.jsx'
 
 // Phone / small-tablet layout of the worklist: one card per study, same data and actions as the table.
-export default function StudyCardList({ studies, now, radiologists, radiologistsById, currentUserId, busyIds, onOpen, onAssign }) {
+export default function StudyCardList({ studies, now, radiologists, radiologistsById, currentUserId, busyIds, onOpen, onAssign, onDelete }) {
   const { t, intlLocale } = useI18n()
   return (
     <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 1, display: 'grid', gap: 1, gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' } }} aria-label={t('worklist.tableLabel')}>
@@ -74,6 +74,7 @@ export default function StudyCardList({ studies, now, radiologists, radiologists
                 busy={busyIds.includes(study.id)}
                 onOpen={onOpen}
                 onAssign={onAssign}
+                onDelete={onDelete}
                 fullWidth
               />
             </Box>

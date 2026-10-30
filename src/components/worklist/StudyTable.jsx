@@ -53,7 +53,7 @@ const ellipsis = { overflow: 'hidden', textOverflow: 'ellipsis' }
 const primaryText = { fontSize: typography.size.sm, fontWeight: typography.weight.semibold, lineHeight: 1.35, ...ellipsis }
 const secondaryText = { fontSize: typography.size.xs, color: colors.text.secondary, lineHeight: 1.35, ...ellipsis }
 
-export default function StudyTable({ studies, now, sort, onSortChange, radiologists, radiologistsById, currentUserId, busyIds, onOpen, onAssign }) {
+export default function StudyTable({ studies, now, sort, onSortChange, radiologists, radiologistsById, currentUserId, busyIds, onOpen, onAssign, onDelete }) {
   const { t, intlLocale } = useI18n()
 
   const cell = (study, col) => {
@@ -119,6 +119,7 @@ export default function StudyTable({ studies, now, sort, onSortChange, radiologi
             busy={busyIds.includes(study.id)}
             onOpen={onOpen}
             onAssign={onAssign}
+            onDelete={onDelete}
           />
         )
       default:

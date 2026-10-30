@@ -4,8 +4,9 @@ import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded'
 import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded'
 import PersonRemoveRoundedIcon from '@mui/icons-material/PersonRemoveRounded'
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded'
+import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
 import { useI18n } from '../../i18n/I18nContext.js'
-import { isFinalized } from '../../worklist/reviewWorkflow.js'
+import { isAiPending, isFinalized } from '../../worklist/reviewWorkflow.js'
 import { brand, colors, typography } from '../../styles/tokens.js'
 
 export function AssigneeLabel({ radiologist, isCurrentUser }) {
@@ -35,11 +36,11 @@ export function AssigneeLabel({ radiologist, isCurrentUser }) {
   )
 }
 
-// Kebab menu: assign to me / to a colleague / unassign. Calls onAssign(radiologistId | null).
-export function AssignMenu({ study, radiologists, currentUserId, busy, onAssign }) {
+export function AssignMenu({ study, radiologists, currentUserId, busy, onAssign, onDelete }) {
   const { t } = useI18n()
   const [anchor, setAnchor] = useState(null)
   const completed = isFinalized(study)
+  const aiPending = isAiPending(study)
   const choose = (id) => {
     setAnchor(null)
     onAssign(id)
@@ -98,6 +99,20 @@ export function AssignMenu({ study, radiologists, currentUserId, busy, onAssign 
             <ListItemText primary={t('assignment.unassign')} />
           </MenuItem>
         )}
+        <Divider />
+        <MenuItem
+          disabled={aiPending}
+          onClick={() => {
+            setAnchor(null)
+            onDelete()
+          }}
+          sx={{ color: colors.danger.main }}
+        >
+          <ListItemIcon>
+            <DeleteOutlineRoundedIcon fontSize="small" sx={{ color: colors.danger.main }} />
+          </ListItemIcon>
+          <ListItemText primary={t('deleteStudy.action')} secondary={aiPending ? t('deleteStudy.aiRunning') : null} />
+        </MenuItem>
       </Menu>
     </>
   )
