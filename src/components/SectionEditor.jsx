@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { AiText, ReviewerText, scanSuggestions } from '../editor/authorshipMarks.js'
-import { REVIEW_ACTION_EVENT, ReviewDecorations, reviewKey } from '../editor/reviewDecorations.js'
+import { REVIEW_ACTION_EVENT, ReviewDecorations, reviewKey, suggestionInBlock } from '../editor/reviewDecorations.js'
 
 const extensions = [
   StarterKit.configure({
@@ -44,8 +44,8 @@ export default function SectionEditor({
     editable,
     onUpdate: ({ editor: ed }) => callbacks.current.onScan(section, scanSuggestions(ed.state.doc)),
     onSelectionUpdate: ({ editor: ed }) => {
-      const mark = ed.state.selection.$from.marks().find((m) => m.type.name === 'aiText')
-      if (mark) callbacks.current.onSuggestionFocus(mark.attrs.suggestionId)
+      const id = suggestionInBlock(ed.state)
+      if (id) callbacks.current.onSuggestionFocus(id)
     },
     onFocus: ({ editor: ed }) => callbacks.current.onFocus(section, ed),
     onBlur: () => callbacks.current.onFocus(null, null),

@@ -210,7 +210,7 @@ export default function WorkspaceHeader({
         </Stack>
       ) : (
         <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', flexShrink: 0 }}>
-          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }} title={`${counts.decided} of ${counts.total} AI points reviewed`}>
             <Box sx={{ position: 'relative', display: 'inline-flex' }}>
               <CircularProgress variant="determinate" value={100} size={26} thickness={5} sx={{ color: '#1f2a40' }} />
               <CircularProgress
@@ -223,7 +223,7 @@ export default function WorkspaceHeader({
             </Box>
             <TwoLine
               primary="AI Draft"
-              secondary={pending ? `${counts.decided} of ${counts.total} reviewed` : 'Ready to finalize'}
+              secondary={pending ? 'Review in progress' : 'Ready to finalize'}
             />
           </Stack>
           <Tooltip title={pending ? `${pending} suggestion${pending > 1 ? 's' : ''} still to review` : ''}>
@@ -235,7 +235,16 @@ export default function WorkspaceHeader({
                 startIcon={<TaskAltRoundedIcon />}
                 disabled={pending > 0}
                 onClick={onFinalize}
-                sx={{ '&.Mui-disabled': { bgcolor: '#1a2438', color: '#56627b' } }}
+                sx={{
+                  '&.Mui-disabled': { bgcolor: '#1a2438', color: '#56627b' },
+                  ...(pending === 0 && {
+                    animation: 'finalize-ready 1.6s ease-out 2',
+                    '@keyframes finalize-ready': {
+                      '0%': { boxShadow: '0 0 0 0 rgba(74,222,128,0.55)' },
+                      '100%': { boxShadow: '0 0 0 10px rgba(74,222,128,0)' },
+                    },
+                  }),
+                }}
               >
                 Finalize
               </Button>

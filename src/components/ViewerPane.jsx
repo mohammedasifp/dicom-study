@@ -87,14 +87,15 @@ function EvidenceStrip({ active, target, onShowInViewer }) {
       {src && (
         <Button
           size="small"
-          variant={showing ? 'text' : 'contained'}
+          variant={showing ? 'text' : 'outlined'}
           startIcon={<CenterFocusStrongRoundedIcon />}
           disabled={showing}
           onClick={onShowInViewer}
           sx={{
             flexShrink: 0,
-            bgcolor: showing ? 'transparent' : '#7c3aed',
-            '&:hover': { bgcolor: '#6d28d9' },
+            color: '#ddd6fe',
+            borderColor: '#4c3a8a',
+            '&:hover': { borderColor: '#a78bfa', bgcolor: 'rgba(124,58,237,0.18)' },
             '&.Mui-disabled': { color: chrome.muted },
           }}
         >

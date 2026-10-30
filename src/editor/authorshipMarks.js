@@ -127,30 +127,49 @@ export function removeSuggestion(editor, suggestionId) {
   view.dispatch(tr)
 }
 
-export function restoreSuggestion(editor, suggestion) {
+export function restoreSuggestion(editor, suggestion, beforeIds = []) {
   const { state, view } = editor
-  const text = state.schema.text(suggestion.text, [
-    state.schema.marks.aiText.create({ suggestionId: suggestion.id }),
-  ])
-  const paragraph = state.schema.nodes.paragraph.create(null, text)
+  const { schema } = state
+  const text = schema.text(suggestion.text, [schema.marks.aiText.create({ suggestionId: suggestion.id })])
+  const paragraph = schema.nodes.paragraph.create(null, text)
   const tr = state.tr.setMeta(PROGRAMMATIC, true)
-  const lastChild = state.doc.lastChild
-  if (lastChild && lastChild.type.name === 'orderedList') {
-    const item = state.schema.nodes.listItem.create(null, paragraph)
-    tr.insert(state.doc.content.size - 1, item)
+
+  const anchor = beforeIds.map((id) => findSuggestionRanges(state.doc, id)[0]).find(Boolean)
+  if (anchor) {
+    const $pos = state.doc.resolve(anchor.from)
+    const inList = $pos.depth > 1 && $pos.node($pos.depth - 1).type.name === 'listItem'
+    if (inList) tr.insert($pos.before($pos.depth - 1), schema.nodes.listItem.create(null, paragraph))
+    else tr.insert($pos.before($pos.depth), paragraph)
+  } else if (state.doc.lastChild && state.doc.lastChild.type.name === 'orderedList') {
+    tr.insert(state.doc.content.size - 1, schema.nodes.listItem.create(null, paragraph))
   } else {
     tr.insert(state.doc.content.size, paragraph)
   }
   view.dispatch(tr)
 }
 
+export function revertSuggestion(editor, suggestion) {
+  const { state, view } = editor
+  const ranges = findSuggestionRanges(state.doc, suggestion.id)
+  if (!ranges.length) return
+  const $from = state.doc.resolve(ranges[0].from)
+  const text = state.schema.text(suggestion.text, [state.schema.marks.aiText.create({ suggestionId: suggestion.id })])
+  view.dispatch(state.tr.setMeta(PROGRAMMATIC, true).replaceWith($from.start(), $from.end(), text))
+}
+
 export function focusSuggestion(editor, suggestionId) {
   const ranges = findSuggestionRanges(editor.state.doc, suggestionId)
   if (!ranges.length) return false
-  editor.chain().focus().setTextSelection(ranges[0].from).run()
+  editor.chain().focus(undefined, { scrollIntoView: false }).setTextSelection(ranges[0].from).run()
   const dom = editor.view.domAtPos(ranges[0].from).node
-  const block = dom.nodeType === 1 ? dom : dom.parentElement
-  if (block) block.closest('p').scrollIntoView({ block: 'center', behavior: 'smooth' })
+  const element = dom.nodeType === 1 ? dom : dom.parentElement
+  const block = element && element.closest('p')
+  const scroller = block && block.closest('.report-scroll')
+  if (!block || !scroller) return true
+  const box = block.getBoundingClientRect()
+  const view = scroller.getBoundingClientRect()
+  const comfortable = box.top >= view.top + 60 && box.bottom <= view.bottom - 140
+  if (!comfortable) block.scrollIntoView({ block: 'center', behavior: 'smooth' })
   return true
 }
 

@@ -6,7 +6,7 @@ import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
 import DeleteSweepOutlinedIcon from '@mui/icons-material/DeleteSweepOutlined'
 import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded'
 
-export default function ReviewNavigator({ counts, discarded, readOnly, onPrev, onNext, onRestore }) {
+export default function ReviewNavigator({ counts, discarded, readOnly, onPrev, onNext, onRestore, onFinalize }) {
   const [anchor, setAnchor] = useState(null)
 
   return (
@@ -82,7 +82,7 @@ export default function ReviewNavigator({ counts, discarded, readOnly, onPrev, o
             </IconButton>
           </Tooltip>
         </Stack>
-      ) : (
+      ) : readOnly ? (
         <Stack
           direction="row"
           spacing={0.75}
@@ -90,9 +90,20 @@ export default function ReviewNavigator({ counts, discarded, readOnly, onPrev, o
         >
           <CheckCircleRoundedIcon sx={{ fontSize: 16, color: 'success.main' }} />
           <Typography sx={{ fontSize: '0.75rem', fontWeight: 650, color: 'success.dark', whiteSpace: 'nowrap' }}>
-            All reviewed
+            Finalized
           </Typography>
         </Stack>
+      ) : (
+        <Button
+          size="small"
+          variant="contained"
+          color="success"
+          startIcon={<CheckCircleRoundedIcon />}
+          onClick={onFinalize}
+          sx={{ height: 30, whiteSpace: 'nowrap' }}
+        >
+          All reviewed · Finalize
+        </Button>
       )}
     </Stack>
   )

@@ -3,6 +3,8 @@ import { extractRuns, scanSuggestions } from '../editor/authorshipMarks.js'
 export const DISCLAIMER =
   'AI-assisted draft. This is not a verified diagnosis. All clinical content must be reviewed and confirmed by a qualified radiologist before use.'
 
+export const DISCLAIMER_SHORT = 'AI-assisted draft · not a diagnosis · must be reviewed by a qualified radiologist'
+
 export function buildStructuredReport({ draft, review, fields, editors }) {
   const sections = {}
   const scans = {}

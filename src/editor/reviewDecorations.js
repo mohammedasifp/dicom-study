@@ -14,10 +14,13 @@ const ICON = {
     '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="m6.4 19-1.4-1.4 5.6-5.6L5 6.4 6.4 5l5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6z"/></svg>',
   image:
     '<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path fill="currentColor" d="M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h14q.825 0 1.413.588T21 5v14q0 .825-.587 1.413T19 21zm0-2h14V5H5zm1-2h12l-3.75-5-3 4L9 13zm-1 2V5z"/></svg>',
+  undo: '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M7 19v-2h7.1q1.575 0 2.738-1T18 13.5T16.838 11T14.1 10H7.8l2.6 2.6L9 14 4 9l5-5 1.4 1.4L7.8 8h6.3q2.425 0 4.163 1.575T20 13.5t-1.737 3.925T14.1 19z"/></svg>',
   warn: '<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="M1 21 12 2l11 19zm11-3q.425 0 .713-.288T13 17t-.288-.712T12 16t-.712.288T11 17t.288.713T12 18m-1-3h2v-5h-2z"/></svg>',
 }
 
-const STATUS_TAG = { pending: null, accepted: 'Accepted', edited: 'Edited' }
+const STATUS_TAG = { pending: 'Awaiting review', accepted: 'Accepted', edited: 'Edited by reviewer' }
+
+const attr = (text) => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
 
 function el(tag, attrs, html) {
   const node = document.createElement(tag)
@@ -37,23 +40,35 @@ function gutterWidget(info, status) {
   const tone = conf >= 80 ? 'hi' : conf >= 65 ? 'mid' : 'lo'
   node.innerHTML =
     `<span class="sg-num">${info.index}</span>` +
-    `<span class="sg-conf sg-conf-${tone}" title="Model confidence">${conf}%</span>` +
-    (info.limitation ? `<span class="sg-warn" title="${info.limitation.replace(/"/g, '&quot;')}">${ICON.warn}</span>` : '')
-  if (STATUS_TAG[status]) node.title = STATUS_TAG[status]
+    `<span class="sg-conf sg-conf-${tone}">${conf}%</span>` +
+    (info.limitation ? `<span class="sg-warn">${ICON.warn}</span>` : '')
+  node.title =
+    `#${info.index} ${info.observation} · ${conf}% model confidence · ${STATUS_TAG[status]}` +
+    (info.limitation ? `\n⚠ ${info.limitation}` : '')
   return node
 }
 
-function trailingWidget(info, pending, showing) {
+const button = (action, id, cls, icon, label, title) =>
+  `<button type="button" class="sg-btn ${cls}" data-sg-action="${action}" data-sid="${id}" title="${attr(title)}">${icon}<span>${label}</span></button>`
+
+function trailingWidget(info, status, readOnly, showing) {
   const id = info.id
   const src = info.source
   const sourceLink = src
-    ? `<button type="button" class="sg-src${showing ? ' sg-src-showing' : ''}" data-sg-action="source" data-sid="${id}" title="Show this image in the viewer">${ICON.image}<span>S${src.seriesNumber} · ${src.seriesDescription} · Img ${src.instanceNumber}</span>${info.roi ? '<em>ROI</em>' : ''}</button>`
+    ? `<button type="button" class="sg-src${showing ? ' sg-src-showing' : ''}" data-sg-action="source" data-sid="${id}" title="${showing ? 'Showing in the viewer' : 'Show this image in the viewer'}">${ICON.image}<span>S${src.seriesNumber} · ${attr(src.seriesDescription)} · Img ${src.instanceNumber}</span>${info.roi ? '<em>ROI</em>' : ''}</button>`
     : ''
-  const actions = pending
-    ? `<button type="button" class="sg-btn sg-accept" data-sg-action="accept" data-sid="${id}" title="Accept (Alt+Enter)">${ICON.check}<span>Accept</span></button>` +
-      `<button type="button" class="sg-btn sg-discard" data-sg-action="discard" data-sid="${id}" title="Discard (Alt+Backspace)">${ICON.close}<span>Discard</span></button>`
-    : ''
-  return el('span', { class: 'sg-trail', contenteditable: 'false' }, sourceLink + actions)
+  let actions = ''
+  if (!readOnly && status === 'pending') {
+    actions =
+      button('accept', id, 'sg-accept', ICON.check, 'Accept', 'Accept (Alt+Enter)') +
+      button('discard', id, 'sg-discard', ICON.close, 'Discard', 'Discard (Alt+Backspace)')
+  } else if (!readOnly && status === 'accepted') {
+    actions = button('unaccept', id, 'sg-ghost', ICON.undo, 'Undo accept', 'Move back to pending')
+  } else if (!readOnly && status === 'edited') {
+    actions = button('revert', id, 'sg-ghost', ICON.undo, 'Revert to AI', `Replace with the AI wording:\n"${info.text}"`)
+  }
+  if (!sourceLink && !actions) return null
+  return el('span', { class: 'sg-trail', contenteditable: 'false' }, sourceLink + (actions ? `<span class="sg-acts">${actions}</span>` : ''))
 }
 
 function buildDecorations(doc, review) {
@@ -97,14 +112,15 @@ function buildDecorations(doc, review) {
     }
     ids.forEach((id) => {
       if (!info[id]) return
-      const pending = !review.readOnly && review.statuses[id] === 'pending'
+      const itemStatus = review.statuses[id] || 'pending'
       const showing = review.showingId === id
-      if (!pending && !info[id].source) return
+      const widget = trailingWidget(info[id], itemStatus, review.readOnly, showing)
+      if (!widget) return
       decos.push(
-        Decoration.widget(ends[id], () => trailingWidget(info[id], pending, showing), {
+        Decoration.widget(ends[id], widget, {
           side: 1,
           ignoreSelection: true,
-          key: `t:${id}:${pending}:${showing}`,
+          key: `t:${id}:${itemStatus}:${review.readOnly}:${showing}`,
         }),
       )
     })
@@ -113,11 +129,18 @@ function buildDecorations(doc, review) {
   return DecorationSet.create(doc, decos)
 }
 
+export function suggestionInBlock(state) {
+  let id = null
+  state.selection.$from.parent.forEach((child) => {
+    const mark = !id && child.marks.find((m) => m.type.name === 'aiText')
+    if (mark) id = mark.attrs.suggestionId
+  })
+  return id
+}
+
 function suggestionAtCursor(state) {
-  const mark = state.selection.$from.marks().find((m) => m.type.name === 'aiText')
-  if (mark) return mark.attrs.suggestionId
   const review = reviewKey.getState(state)
-  return review ? review.activeId : null
+  return suggestionInBlock(state) || (review ? review.activeId : null)
 }
 
 export const ReviewDecorations = Extension.create({

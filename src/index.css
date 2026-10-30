@@ -51,12 +51,25 @@ body {
 /* ---------- suggestion blocks ---------- */
 
 .report-doc .blk-pending {
-  background: #f7f5ff;
-  border-left-color: #8b5cf6;
+  background: #fbfaff;
+  border-left-color: #a78bfa;
+}
+
+.report-doc .blk-pending.blk-active {
+  background: #f5f3ff;
+  border-left-color: #7c3aed;
 }
 
 .report-doc .blk-active {
-  box-shadow: 0 0 0 1.5px #a78bfa;
+  box-shadow: 0 0 0 1.5px #c4b5fd;
+}
+
+.report-doc .blk:hover:not(.blk-active) {
+  background-color: #faf9fc;
+}
+
+.report-doc .blk-pending:hover:not(.blk-active) {
+  background-color: #f7f5ff;
 }
 
 .report-doc.show-authorship .blk-accepted {
@@ -173,6 +186,32 @@ body {
   user-select: none;
 }
 
+.report-doc .sg-acts {
+  display: inline-flex;
+  gap: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 140ms;
+}
+
+.report-doc .blk:hover .sg-acts,
+.report-doc .blk-active .sg-acts {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.report-doc .sg-ghost {
+  color: #64748b;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.report-doc .sg-ghost:hover {
+  color: #334155;
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
 .report-doc .sg-src {
   display: inline-flex;
   align-items: center;
@@ -180,9 +219,9 @@ body {
   height: 22px;
   padding: 0 7px 0 5px;
   border-radius: 6px;
-  border: 1px solid #ddd6fe;
+  border: 1px solid #e2e8f0;
   background: #fff;
-  color: #6d28d9;
+  color: #64748b;
   font-family: inherit;
   font-size: 0.68rem;
   font-weight: 600;
@@ -190,6 +229,12 @@ body {
   white-space: nowrap;
   cursor: pointer;
   transition: background-color 120ms, border-color 120ms;
+}
+
+.report-doc .blk:hover .sg-src,
+.report-doc .blk-active .sg-src {
+  color: #6d28d9;
+  border-color: #ddd6fe;
 }
 
 .report-doc .sg-src:hover {
@@ -208,13 +253,13 @@ body {
   padding: 2px 3px;
 }
 
-.report-doc .sg-src-showing {
+.report-doc .blk .sg-src.sg-src-showing {
   background: #7c3aed;
   border-color: #7c3aed;
   color: #fff;
 }
 
-.report-doc .sg-src-showing:hover {
+.report-doc .blk .sg-src.sg-src-showing:hover {
   background: #6d28d9;
 }
 

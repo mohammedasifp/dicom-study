@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { Box, Stack } from '@mui/material'
+import { Box, Button, Snackbar, Stack } from '@mui/material'
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import { draftReport } from '../data/draftReport.js'
 import { initReview, reviewCounts, reviewReducer } from '../report/reviewReducer.js'
 import { buildStructuredReport, downloadJson } from '../report/exportReport.js'
-import { focusSuggestion, removeSuggestion, restoreSuggestion } from '../editor/authorshipMarks.js'
+import { focusSuggestion, removeSuggestion, restoreSuggestion, revertSuggestion } from '../editor/authorshipMarks.js'
 import WorkspaceHeader from '../components/WorkspaceHeader.jsx'
 import ReportPanel from '../components/ReportPanel.jsx'
 import ViewerPane from '../components/ViewerPane.jsx'
@@ -53,6 +53,7 @@ export default function ReportingWorkspace({ onExit }) {
   const [finalizeOpen, setFinalizeOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [printReport, setPrintReport] = useState(null)
+  const [toast, setToast] = useState(null)
   const editors = useRef({ findings: null, impression: null })
   const groupRef = useRef(null)
 
@@ -100,18 +101,43 @@ export default function ReportingWorkspace({ onExit }) {
     }
   }
 
-  const onReviewAction = (action, id) => {
+  const restore = (s) => {
+    if (readOnly || review.statuses[s.id] !== 'discarded') return
+    const editor = editors.current[s.section]
+    const order = draft.suggestions.filter((x) => x.section === s.section)
+    const laterIds = order.slice(order.findIndex((x) => x.id === s.id) + 1).map((x) => x.id)
+    if (editor) restoreSuggestion(editor, s, laterIds)
+    dispatch({ type: 'setActive', id: s.id })
+  }
+
+  const onReviewAction = (rawAction, id) => {
+    const action = rawAction.replace(/^kb:/, '')
     const s = id ? suggestionInfo[id] : null
-    const pending = s && review.statuses[s.id] === 'pending'
+    const status = s ? review.statuses[s.id] : null
+    const editor = s ? editors.current[s.section] : null
     switch (action) {
       case 'select':
         if (s) focus(s)
         break
       case 'accept':
-        if (pending && !readOnly) dispatch({ type: 'accept', id: s.id })
+        if (status !== 'pending' || readOnly) break
+        dispatch({ type: 'accept', id: s.id })
+        step(1, s.id)
         break
       case 'discard':
-        if (pending && !readOnly && editors.current[s.section]) removeSuggestion(editors.current[s.section], s.id)
+        if (status !== 'pending' || readOnly || !editor) break
+        removeSuggestion(editor, s.id)
+        setToast({ id: s.id, message: `#${s.index} ${s.observation} discarded` })
+        step(1, s.id)
+        break
+      case 'unaccept':
+        if (status === 'accepted' && !readOnly) dispatch({ type: 'unaccept', id: s.id })
+        break
+      case 'revert':
+        if (status !== 'edited' || readOnly || !editor) break
+        revertSuggestion(editor, s)
+        dispatch({ type: 'revert', id: s.id })
+        dispatch({ type: 'setActive', id: s.id })
         break
       case 'source':
         if (s) openInViewer(s)
@@ -124,11 +150,6 @@ export default function ReportingWorkspace({ onExit }) {
         break
       default:
     }
-  }
-
-  const onKeyboardAction = (action, id) => {
-    onReviewAction(action, id)
-    if (action === 'accept' || action === 'discard') step(1, id)
   }
 
   function openInViewer(s) {
@@ -190,13 +211,9 @@ export default function ReportingWorkspace({ onExit }) {
                 onEditorFocus={onEditorFocus}
                 onScan={onScan}
                 onSuggestionFocus={onSuggestionFocus}
-                onReviewAction={(action, id) =>
-                  action.startsWith('kb:') ? onKeyboardAction(action.slice(3), id) : onReviewAction(action, id)
-                }
-                onRestore={(s) => {
-                  const editor = editors.current[s.section]
-                  if (editor) restoreSuggestion(editor, s)
-                }}
+                onReviewAction={onReviewAction}
+                onRestore={restore}
+                onFinalize={() => setFinalizeOpen(true)}
               />
             </Panel>
             <Separator className="resize-handle" />
@@ -224,6 +241,28 @@ export default function ReportingWorkspace({ onExit }) {
         suggestions={draft.suggestions}
       />
       <PrintableReport report={printReport} />
+      <Snackbar
+        key={toast ? toast.id : 'none'}
+        open={Boolean(toast)}
+        autoHideDuration={6000}
+        onClose={(_e, reason) => reason !== 'clickaway' && setToast(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        message={toast ? toast.message : ''}
+        action={
+          <Button
+            size="small"
+            sx={{ color: '#c4b5fd' }}
+            onClick={() => {
+              restore(suggestionInfo[toast.id])
+              setToast(null)
+            }}
+          >
+            Undo
+          </Button>
+        }
+        slotProps={{ content: { sx: { bgcolor: '#1e293b', fontSize: '0.8rem', borderRadius: 2 } } }}
+        sx={{ mb: 4 }}
+      />
     </>
   )
 }

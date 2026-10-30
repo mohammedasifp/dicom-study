@@ -27,7 +27,7 @@ export function initReview(draft) {
       ),
     ],
     finalized: null,
-    activeId: null,
+    activeId: draft.suggestions.length ? draft.suggestions[0].id : null,
     showingId: null,
     viewerTarget: null,
   }
@@ -62,6 +62,12 @@ export function reviewReducer(state, action) {
         ],
       }
     }
+    case 'revert':
+      return {
+        ...state,
+        statuses: { ...state.statuses, [action.id]: STATUS.pending },
+        history: [...state.history, event('Reviewer', 'Reverted to AI wording', action.id)],
+      }
     case 'scan': {
       const statuses = { ...state.statuses }
       const events = []
@@ -82,6 +88,7 @@ export function reviewReducer(state, action) {
       return {
         ...state,
         finalized: { reviewer: action.reviewer, at: new Date().toISOString() },
+        activeId: null,
         history: [...state.history, event('Reviewer', 'Finalized as reviewed draft', null, action.reviewer)],
       }
     case 'reopen':
