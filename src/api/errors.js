@@ -9,8 +9,6 @@ export function errorMessageKey(error) {
       return 'errors.unauthorized'
     case 'NOT_FOUND':
       return 'errors.notFound'
-    case 'AI_REPORT_NOT_READY':
-      return 'errors.aiReportNotReady'
     default:
       return error?.status === 403 ? 'errors.forbidden' : 'errors.generic'
   }

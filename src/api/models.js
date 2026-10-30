@@ -1,5 +1,4 @@
-// Data contracts shared by the mock and HTTP implementations. Backend responses must map to these shapes;
-// if the wire format differs, adapt it in the HTTP implementation, not in the UI.
+// Shapes the worklist UI expects. Backend responses are mapped to them in api/backendWorklistApi.js.
 
 /**
  * @typedef {'CT'|'MR'|'XR'|'US'} Modality

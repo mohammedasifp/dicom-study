@@ -40,7 +40,6 @@ const en = {
     unauthorized: 'Your session has expired. Please sign in again.',
     forbidden: 'You do not have permission to do this.',
     notFound: 'The requested record could not be found.',
-    aiReportNotReady: 'The AI report for this study is still being generated. You can open it as soon as it is ready.',
     generic: 'Something went wrong. Please try again.',
   },
   worklist: {
@@ -234,18 +233,6 @@ const en = {
     confirmTitle: 'Change assignment?',
     confirmReassign: '{{patient}} is currently assigned to {{current}}. Reassign it to {{next}}?',
     confirmUnassign: '{{patient}} is currently assigned to {{current}}. Remove the assignment?',
-  },
-  report: {
-    loading: 'Opening study…',
-    loadError: 'Could not open this study',
-    notFound: 'Study not found',
-    backToWorklist: 'Back to worklist',
-    aiPendingTitle: 'AI report not ready yet',
-    checkAgain: 'Check again',
-    syncedReviewed: 'All AI findings reviewed. Study marked as Reviewed; finalize to sign off.',
-    syncedFinalized: 'Report finalized. Study marked as Finalized on the worklist.',
-    syncedReopen: 'Report reopened. Study is back under review.',
-    syncFailed: 'The worklist status was not updated. {{reason}}',
   },
 }
 

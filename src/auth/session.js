@@ -1,5 +1,3 @@
-import { setAuthTokenProvider } from '../api/httpClient.js'
-
 // The signed-in session ({ token, user }) lives in sessionStorage: it survives a page refresh but not closing
 // the tab, which suits shared reporting workstations.
 const KEY = 'seebetter.session'
@@ -20,5 +18,3 @@ export function saveSession(session) {
 export function clearSession() {
   sessionStorage.clear()
 }
-
-setAuthTokenProvider(() => readSession()?.token ?? null)

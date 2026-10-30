@@ -1,40 +1,43 @@
 import { readSession } from '../auth/session.js'
-import { notifyUnauthorized } from './httpClient.js'
+import { ApiError, codeFor, notifyUnauthorized } from './httpClient.js'
 
-export class ApiError extends Error {
-  constructor(message, status) {
-    super(message)
-    this.status = status
-  }
-}
+export { ApiError }
 
-const OBJECT_ID = /^[a-f0-9]{24}$/i
+const TIMEOUT_MS = 20000
 
-function headersFor(body) {
-  const headers = {}
+function headersFor(body, token) {
+  const headers = { Accept: 'application/json' }
   if (body !== undefined) headers['Content-Type'] = 'application/json'
-  const session = readSession()
-  const userId = session && session.user && session.user.id
-  if (userId && OBJECT_ID.test(userId)) headers['X-User-Id'] = userId
-  if (session && session.token) headers.Authorization = `Bearer ${session.token}`
+  if (token) headers.Authorization = `Bearer ${token}`
   return headers
 }
 
 export async function request(method, path, body) {
+  const session = readSession()
+  const token = session && session.token
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
   let res
   try {
     res = await fetch(path, {
       method,
-      headers: headersFor(body),
+      headers: headersFor(body, token),
       body: body === undefined ? undefined : JSON.stringify(body),
+      signal: controller.signal,
     })
-  } catch {
-    throw new ApiError('Cannot reach the report server', 0)
+  } catch (err) {
+    const timedOut = err.name === 'AbortError'
+    throw new ApiError(timedOut ? 'The report server took too long to answer' : 'Cannot reach the report server', {
+      code: timedOut ? 'TIMEOUT' : 'NETWORK',
+    })
+  } finally {
+    clearTimeout(timer)
   }
-  // The backend rejects an expired or unknown session token with 401: sign out so the user lands on the login screen.
-  if (res.status === 401 && readSession()?.token) notifyUnauthorized()
   const json = await res.json().catch(() => null)
-  if (!json) throw new ApiError(`Server error (${res.status})`, res.status)
-  if (json.code !== 0) throw new ApiError(json.message || `Request failed (${res.status})`, res.status)
+  if (res.status === 401 && token) notifyUnauthorized()
+  if (!json) throw new ApiError(`Server error (${res.status})`, { status: res.status, code: codeFor(res.status) })
+  if (json.code !== 0) {
+    throw new ApiError(json.message || `Request failed (${res.status})`, { status: res.status, code: codeFor(res.status), details: json })
+  }
   return json.data
 }
