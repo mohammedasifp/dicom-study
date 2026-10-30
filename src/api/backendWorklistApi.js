@@ -7,7 +7,6 @@ import {
   listStudies as listBackendStudies,
 } from './backend.js'
 import { patientIdentity, toIsoDateTime } from './adapter.js'
-import { applyAssignment } from '../worklist/reviewWorkflow.js'
 import { AI_FAILURE_REASON, AI_REPORT_STATUS as AI, PRIORITY, REVIEW_STATUS as R } from '../constants/study.js'
 
 // The backend keeps one study status; the worklist splits it into the AI report status (pipeline)
@@ -20,14 +19,14 @@ const STATUS = {
   REPORTED: { ai: AI.READY, review: R.FINALIZED },
 }
 
-const SEX = { M: 'M', F: 'F', O: 'O' }
-
 const toRadiologist = (r) => ({ id: r.id || String(r._id), name: r.name, initials: r.initials || '', subspecialty: r.subspecialty || '' })
 
 function toWorklistStudy(s) {
   const patient = s.patient || {}
   const ai = s.ai || {}
-  const mapped = STATUS[s.status] || { ai: AI.RECEIVED, review: R.PENDING_REVIEW }
+  const status = STATUS[s.status] || { ai: AI.RECEIVED, review: R.PENDING_REVIEW }
+  // A report finalised after an AI failure was written by hand, so it must not read as an AI report.
+  const mapped = s.status === 'REPORTED' && ai.failureReason ? { ...status, ai: AI.FAILED } : status
   const review = s.review || { total: 0, decided: 0 }
   let reviewStatus = mapped.review
   if (reviewStatus === R.PENDING_REVIEW && review.total > 0 && review.decided === review.total) reviewStatus = R.REVIEWED
@@ -39,9 +38,8 @@ function toWorklistStudy(s) {
     studyInstanceUID: s.studyInstanceUid,
     accessionNumber: s.accessionNumber || '-',
     patient: {
-      ...patientIdentity(patient, s.studyDate),
+      ...patientIdentity(patient, s.studyDate, 'O'),
       uhid: patient.patientId || '-',
-      sex: SEX[patient.sex] || 'O',
     },
     patientClass: s.patientClass || 'OP',
     modality: s.modality === 'CR' || s.modality === 'DX' ? 'XR' : s.modality,
@@ -51,7 +49,7 @@ function toWorklistStudy(s) {
     slaTargetMinutes: slaDueAt ? (new Date(slaDueAt).getTime() - new Date(studyDateTime).getTime()) / 60000 : null,
     referringDoctor: s.referringPhysician || '-',
     priority: s.priority || PRIORITY.ROUTINE,
-    assignedTo: null,
+    assignedTo: s.assignedTo || null,
     aiReportStatus: mapped.ai,
     aiReportUpdatedAt: ai.completedAt || ai.requestedAt || s.updatedAt,
     aiFailureReason: mapped.ai === AI.FAILED ? ai.failureReason || AI_FAILURE_REASON.PROCESSING_ERROR : null,
@@ -63,7 +61,7 @@ function toWorklistStudy(s) {
     clinicalHistory: s.clinicalHistory || '',
     reportedAt: s.reportedAt || null,
   }
-  return s.assignedTo ? applyAssignment(study, s.assignedTo) : study
+  return study
 }
 
 export const backendWorklistApi = {

@@ -7,19 +7,19 @@ import { useI18n } from '../../i18n/I18nContext.js'
 import { useNotify } from '../../hooks/useNotify.js'
 import { getReportPdf } from '../../api/backend.js'
 import { errorMessageKey } from '../../api/errors.js'
-import { isAiReportReady } from '../../worklist/reviewWorkflow.js'
+import { isAiPending } from '../../worklist/reviewWorkflow.js'
 import { actionIconSx, actionIconTones } from '../../styles/tokens.js'
 
 const fileName = (study) => `report_${(study.patient.uhid || study.id).replace(/[^\w-]+/g, '_')}_${study.studyDateTime.slice(0, 10)}.pdf`
 
 // View or download the report PDF straight from the worklist, without opening the editor.
-// The PDF is produced by the backend (GET /api/studies/:uid/report/pdf), so it exists once AI has generated a report.
+// The PDF is produced by the backend (GET /api/studies/:uid/report/pdf) for AI drafts and manual reports alike.
 export default function ReportPdfMenu({ study }) {
   const { t } = useI18n()
   const notify = useNotify()
   const [anchor, setAnchor] = useState(null)
   const [busy, setBusy] = useState(false)
-  const available = isAiReportReady(study)
+  const available = !isAiPending(study)
 
   const run = async (kind) => {
     setAnchor(null)

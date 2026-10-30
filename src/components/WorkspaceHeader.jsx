@@ -279,7 +279,7 @@ export default function WorkspaceHeader({
               />
             </Box>
             <TwoLine
-              primary="AI Draft"
+              primary={model.id ? 'AI Draft' : 'Manual report'}
               secondary={pending ? 'Review in progress' : 'Ready to finalize'}
             />
           </Stack>

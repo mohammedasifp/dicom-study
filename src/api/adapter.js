@@ -19,18 +19,27 @@ export function ageAt(birthDate, studyDate) {
   return Number.isFinite(years) && years >= 0 ? `${years} Y` : '-'
 }
 
-const AGE_TOKEN = /^(\d{1,3})\s*([YMWD])?\s*\/?\s*[MFO]?$/i
+const AGE_TOKEN = /^(\d{1,3})\s*([YMWD])?\s*\/?\s*([MFO])?$/i
 
-// Some centres put "46Y/M" inside the DICOM name, as in "RAHUL^46Y/M".
-export function patientIdentity(patient, studyDate) {
-  const parts = (patient.name || '').split('^').map((p) => p.trim()).filter(Boolean)
+// Some centres put the age inside the DICOM name, as in "RAHUL^46Y/M" or "SANAM AHMAD 43/F".
+export function patientIdentity(patient, studyDate, unknownSex) {
+  const parts = (patient.name || '').split(/[\^\s]+/).filter(Boolean)
   const ageToken = parts.map((p) => p.match(AGE_TOKEN)).find(Boolean)
   const kept = parts.filter((p) => !AGE_TOKEN.test(p))
-  if (ageToken && kept.length > 1 && /^[MFO]$/i.test(kept[kept.length - 1])) kept.pop()
-  const name = kept.join(' ') || 'Unknown'
+  let tokenSex = ageToken && ageToken[3]
+  const last = kept[kept.length - 1]
+  if (ageToken && kept.length > 1 && /^[MFO]$/i.test(last)) {
+    kept.pop()
+    tokenSex = tokenSex || last
+  }
   const age = ageAt(patient.birthDate, studyDate)
-  return { name, age: age === '-' && ageToken ? `${ageToken[1]} ${(ageToken[2] || 'Y').toUpperCase()}` : age }
+  return {
+    name: kept.join(' ') || 'Unknown',
+    age: age === '-' && ageToken ? `${ageToken[1]} ${(ageToken[2] || 'Y').toUpperCase()}` : age,
+    sex: SEX[patient.sex] || (tokenSex ? tokenSex.toUpperCase() : unknownSex),
+  }
 }
+
 
 const SEX = { M: 'M', F: 'F', O: 'O' }
 
@@ -96,9 +105,8 @@ export function toDraft({ study, report, ai }) {
       runId: null,
     },
     patient: {
-      ...patientIdentity(patient, study.studyDate),
+      ...patientIdentity(patient, study.studyDate, '-'),
       patientId: patient.patientId || '-',
-      sex: SEX[patient.sex] || '-',
     },
     study: {
       studyInstanceUID: study.studyInstanceUid,

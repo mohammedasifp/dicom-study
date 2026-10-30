@@ -7,7 +7,7 @@ import EditorToolbar from './EditorToolbar.jsx'
 import ReportEditor from './ReportEditor.jsx'
 import ReviewNavigator from './ReviewNavigator.jsx'
 import SuggestionRail from './SuggestionRail.jsx'
-import { DISCLAIMER, DISCLAIMER_SHORT } from '../report/exportReport.js'
+import { DISCLAIMER, DISCLAIMER_SHORT, NO_AI_DISCLAIMER, NO_AI_DISCLAIMER_SHORT } from '../report/exportReport.js'
 import { formatDate, formatDateTime } from '../report/format.js'
 
 const SHORTCUTS = [
@@ -227,10 +227,10 @@ export default function ReportPanel({
         sx={{ alignItems: 'center', px: 2, height: 30, flexShrink: 0, borderTop: 1, borderColor: 'divider', bgcolor: '#fffbeb' }}
       >
         <GppMaybeOutlinedIcon sx={{ fontSize: 15, color: 'warning.main' }} />
-        <Typography noWrap sx={{ fontSize: '0.7rem', color: '#78350f', flex: 1 }} title={DISCLAIMER}>
-          {DISCLAIMER_SHORT}
+        <Typography noWrap sx={{ fontSize: '0.7rem', color: '#78350f', flex: 1 }} title={model.id ? DISCLAIMER : NO_AI_DISCLAIMER}>
+          {model.id ? DISCLAIMER_SHORT : NO_AI_DISCLAIMER_SHORT}
         </Typography>
-        {model && (
+        {model.id && (
         <FooterButton icon={<InfoOutlinedIcon sx={{ fontSize: 15 }} />} label="AI model notes">
           <Typography sx={popTitle}>
             {model.name} v{model.version} · {model.zoo}

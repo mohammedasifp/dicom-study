@@ -81,10 +81,27 @@ function Blocks({ blocks, refIndex, plain }) {
   return out
 }
 
+function Observations({ items }) {
+  if (!items.length) return null
+  return (
+    <>
+      <h2>Observations</h2>
+      <ul style={{ margin: '0 0 5pt', paddingLeft: '14pt' }}>
+        {items.map((text, i) => (
+          <li key={i}>{text}</li>
+        ))}
+      </ul>
+    </>
+  )
+}
+
 export default function PrintableReport({ report }) {
   if (!report) return <style>{css}</style>
   const refIndex = Object.fromEntries(report.suggestions.map((s, i) => [s.id, i + 1]))
   const final = report.reportType === 'FINAL_REVIEWED_DRAFT'
+  const observations = report.suggestions.filter((s) => s.status !== 'discarded').map((s) => s.finalText || s.aiText)
+  const findingsAt = report.sections.findIndex((s) => /^findings$/i.test(s.title))
+  const observationsAt = findingsAt === -1 ? report.sections.length : findingsAt
 
   return (
     <>
@@ -153,10 +170,12 @@ export default function PrintableReport({ report }) {
 
         {report.sections.map((section, i) => (
           <div key={`${section.title}-${i}`}>
+            {i === observationsAt && <Observations items={observations} />}
             {section.title && <h2>{section.title}</h2>}
             <Blocks blocks={section.blocks} refIndex={refIndex} plain={final} />
           </div>
         ))}
+        {observationsAt === report.sections.length && <Observations items={observations} />}
 
         {report.suggestions.length > 0 && !final && (
         <>

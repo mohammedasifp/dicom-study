@@ -213,7 +213,7 @@ const en = {
   },
   reportPdf: {
     menu: 'Report PDF: view or download',
-    unavailable: 'Report PDF is available once the AI report is generated',
+    unavailable: 'Report PDF is available once the AI analysis ends',
     view: 'View report',
     download: 'Download PDF',
     failed: 'Could not get the report PDF. {{reason}}',
@@ -264,6 +264,8 @@ const en = {
       DELIVERED: 'Report delivered',
     },
     stageFilter: 'Showing exceptions at {{stage}}',
+    stageExceptions: { zero: 'no open exceptions', one: 'open exception', other: 'open exceptions' },
+    stageCases: { zero: 'Nothing here', one: '1 here', other: '{{count}} here' },
     workflowStage: { ACQUISITION: 'Acquisition', PACS_TRANSFER: 'PACS transfer', REPORTING: 'Reporting', DELIVERY: 'Delivery' },
     type: {
       MISSED_SCAN: 'Missed scan',
