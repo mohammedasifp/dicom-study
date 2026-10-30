@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Box, Button, Snackbar, Stack } from '@mui/material'
 import { Group, Panel, Separator } from 'react-resizable-panels'
-import { draftReport } from '../data/draftReport.js'
 import { initReview, reviewCounts, reviewReducer } from '../report/reviewReducer.js'
 import { buildStructuredReport, downloadJson } from '../report/exportReport.js'
 import { keyImageContent } from '../report/keyImages.js'
+import { getReviewer, setReviewer } from '../report/reviewer.js'
+import { finaliseReport, listEvents, markViewed, reopenReport, setSla } from '../api/backend.js'
+import { buildSavePayload, useBackendSync } from '../hooks/useBackendSync.js'
 import { focusSuggestion, removeSuggestion, restoreSuggestion, revertSuggestion } from '../editor/authorshipMarks.js'
 import WorkspaceHeader from '../components/WorkspaceHeader.jsx'
 import ReportPanel from '../components/ReportPanel.jsx'
@@ -17,15 +19,21 @@ const SECTION_TITLES = { findings: 'Findings', impression: 'Impression' }
 
 const escapeHtml = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
-const aiSpan = (s) => `<span data-suggestion-id="${s.id}">${escapeHtml(s.text)}</span>`
+const aiSpan = (s) =>
+  `<span data-suggestion-id="${s.id}">${escapeHtml(s.decision === 'edited' && s.reviewerText ? s.reviewerText : s.text)}</span>`
 
 function buildInitialContent(draft) {
-  const of = (section) => draft.suggestions.filter((s) => s.section === section)
+  if (draft.body) return draft.body
+  const of = (section) => draft.suggestions.filter((s) => s.section === section && s.decision !== 'discarded')
+  const impressionPoints = of('impression')
+  const impression = impressionPoints.length
+    ? `<ol>${impressionPoints.map((s) => `<li><p>${aiSpan(s)}</p></li>`).join('')}</ol>`
+    : `<p>${escapeHtml(draft.impressionText)}</p>`
   return [
     `<h3>Clinical history</h3><p>${escapeHtml(draft.clinicalHistory)}</p>`,
     `<h3>Technique</h3><p>${escapeHtml(draft.technique)}</p>`,
-    `<h3>${SECTION_TITLES.findings}</h3>${of('findings').map((s) => `<p>${aiSpan(s)}</p>`).join('')}`,
-    `<h3>${SECTION_TITLES.impression}</h3><ol>${of('impression').map((s) => `<li><p>${aiSpan(s)}</p></li>`).join('')}</ol>`,
+    `<h3>${SECTION_TITLES.findings}</h3>${of('findings').map((s) => `<p>${aiSpan(s)}</p>`).join('') || '<p></p>'}`,
+    `<h3>${SECTION_TITLES.impression}</h3>${impression}`,
   ].join('')
 }
 
@@ -42,8 +50,7 @@ function layoutMode(layout) {
   return 'split'
 }
 
-// `draft` defaults to the bundled demo draft (#/report); worklist studies pass their own (pages/StudyReportPage.jsx).
-export default function ReportingWorkspace({ draft = draftReport, onExit, onFinalized, onReopened }) {
+export default function ReportingWorkspace({ uid, draft, onExit, onRerun, onSlaChange }) {
   const initialContent = useMemo(() => buildInitialContent(draft), [draft])
   const suggestions = useMemo(() => draft.suggestions.map((s, i) => ({ ...s, index: i + 1 })), [draft])
   const suggestionInfo = useMemo(() => Object.fromEntries(suggestions.map((s) => [s.id, s])), [suggestions])
@@ -59,6 +66,8 @@ export default function ReportingWorkspace({ draft = draftReport, onExit, onFina
   const [historyOpen, setHistoryOpen] = useState(false)
   const [printReport, setPrintReport] = useState(null)
   const [toast, setToast] = useState(null)
+  const [errorMessage, setErrorMessage] = useState(null)
+  const [events, setEvents] = useState(null)
   const groupRef = useRef(null)
   const tickFrame = useRef(0)
 
@@ -72,8 +81,27 @@ export default function ReportingWorkspace({ draft = draftReport, onExit, onFina
     setLayout(mode)
   }
 
+  const { saveState, scheduleSave, saveNow, flush } = useBackendSync({
+    uid,
+    editor,
+    statuses: review.statuses,
+    texts: review.texts,
+    readOnly,
+    onError: setErrorMessage,
+  })
+
+  useEffect(() => {
+    markViewed(uid, getReviewer()).catch(() => {})
+  }, [uid])
+
   const onEditorReady = useCallback((ed) => setEditor(ed), [])
-  const onScan = useCallback((result) => dispatch({ type: 'scan', result }), [])
+  const onScan = useCallback(
+    (result) => {
+      dispatch({ type: 'scan', result })
+      scheduleSave()
+    },
+    [scheduleSave],
+  )
   const onSuggestionFocus = useCallback((id) => dispatch({ type: 'setActive', id }), [])
   const onTransaction = useCallback(() => {
     cancelAnimationFrame(tickFrame.current)
@@ -161,7 +189,52 @@ export default function ReportingWorkspace({ draft = draftReport, onExit, onFina
     editor.chain().focus().insertContent(keyImageContent(image)).run()
   }
 
-  const buildReport = () => buildStructuredReport({ draft, review, editor })
+  const loadEvents = () =>
+    listEvents(uid)
+      .then((data) => {
+        setEvents(data.events)
+        return data.events
+      })
+      .catch((err) => {
+        setErrorMessage(`Could not load the audit trail: ${err.message}`)
+        return []
+      })
+
+  const exportReport = async (kind) => {
+    const report = buildStructuredReport({ draft, review, editor, events: await loadEvents() })
+    if (kind === 'json') downloadJson(report)
+    else setPrintReport(report)
+  }
+
+  const finalize = async (reviewer) => {
+    setFinalizeOpen(false)
+    setReviewer(reviewer)
+    try {
+      await flush()
+      const saved = await finaliseReport(uid, { reviewer, authorship: editor ? buildSavePayload(editor).authorship : undefined })
+      dispatch({ type: 'finalize', reviewer, at: saved && saved.finalisedAt })
+    } catch (err) {
+      setErrorMessage(`Could not finalise: ${err.message}`)
+    }
+  }
+
+  const reopen = async () => {
+    try {
+      const result = await reopenReport(uid, { reviewer: getReviewer(), reason: 'Reopened from the reporting screen' })
+      dispatch({ type: 'reopen' })
+      if (result === null) setErrorMessage('Unlocked on this screen only. The server keeps the report final until reopen is supported.')
+    } catch (err) {
+      setErrorMessage(`Could not reopen: ${err.message}`)
+    }
+  }
+
+  const changeSla = async (minutes) => {
+    try {
+      onSlaChange((await setSla(uid, minutes, getReviewer())).sla)
+    } catch (err) {
+      setErrorMessage(`Could not set the SLA: ${err.message}`)
+    }
+  }
 
   useEffect(() => {
     if (!printReport) return
@@ -179,14 +252,16 @@ export default function ReportingWorkspace({ draft = draftReport, onExit, onFina
           layout={layout}
           onLayoutChange={changeLayout}
           onBack={onExit}
-          onHistory={() => setHistoryOpen(true)}
-          onExportJson={() => downloadJson(buildReport())}
-          onExportPdf={() => setPrintReport(buildReport())}
-          onFinalize={() => setFinalizeOpen(true)}
-          onReopen={() => {
-            dispatch({ type: 'reopen' })
-            onReopened?.()
+          onHistory={() => {
+            setHistoryOpen(true)
+            loadEvents()
           }}
+          onExportJson={() => exportReport('json')}
+          onExportPdf={() => exportReport('pdf')}
+          onFinalize={() => setFinalizeOpen(true)}
+          onReopen={reopen}
+          onRerun={onRerun}
+          onSetSla={changeSla}
         />
 
         <Box sx={{ flex: 1, minHeight: 0 }}>
@@ -224,6 +299,8 @@ export default function ReportingWorkspace({ draft = draftReport, onExit, onFina
                 onTransaction={onTransaction}
                 onRestore={restore}
                 onFinalize={() => setFinalizeOpen(true)}
+                saveState={saveState}
+                onRetrySave={saveNow}
               />
             </Panel>
             <Separator className="resize-handle" />
@@ -247,14 +324,19 @@ export default function ReportingWorkspace({ draft = draftReport, onExit, onFina
         key={finalizeOpen ? 'open' : 'closed'}
         open={finalizeOpen}
         counts={counts}
+        defaultReviewer={getReviewer()}
         onClose={() => setFinalizeOpen(false)}
-        onConfirm={(reviewer) => {
-          dispatch({ type: 'finalize', reviewer })
-          setFinalizeOpen(false)
-          onFinalized?.(reviewer)
-        }}
+        onConfirm={finalize}
       />
-      <HistoryDrawer open={historyOpen} onClose={() => setHistoryOpen(false)} history={review.history} suggestions={draft.suggestions} />
+      <HistoryDrawer open={historyOpen} onClose={() => setHistoryOpen(false)} events={events} suggestions={suggestions} />
+      <Snackbar
+        open={Boolean(errorMessage)}
+        autoHideDuration={7000}
+        onClose={() => setErrorMessage(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        message={errorMessage || ''}
+        slotProps={{ content: { sx: { bgcolor: '#7f1d1d', fontSize: '0.8rem', borderRadius: 2 } } }}
+      />
       <PrintableReport report={printReport} />
       <Snackbar
         key={toast ? toast.id : 'none'}

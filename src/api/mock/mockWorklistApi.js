@@ -1,6 +1,5 @@
 import { createMockStudies } from '../../data/mock/studies.js'
 import { mockCurrentUserId, mockRadiologists } from '../../data/mock/radiologists.js'
-import { draftReport } from '../../data/draftReport.js'
 import { appConfig } from '../../config/appConfig.js'
 import { ApiError } from '../httpClient.js'
 import { draftFromStudy } from '../../report/draftFromStudy.js'
@@ -8,8 +7,6 @@ import { applyAssignment, applyCompleteReport, applyReopenReport, applyStartRepo
 
 // In-memory stand-in for the worklist backend. Same method signatures as httpWorklistApi.js.
 // State lives for the browser session, so assignments and status changes persist while navigating.
-
-const AI_DRAFTS_BY_STUDY_UID = { [draftReport.study.studyInstanceUID]: draftReport }
 
 let studies = null
 const store = () => (studies ||= createMockStudies())
@@ -40,6 +37,6 @@ export const mockWorklistApi = {
   reopenReport: async (id) => update(id, applyReopenReport),
   getReportDraft: async (id) => {
     const study = find(id)
-    return delay(draftFromStudy(study, AI_DRAFTS_BY_STUDY_UID[study.studyInstanceUID] || null))
+    return delay(draftFromStudy(study, null))
   },
 }

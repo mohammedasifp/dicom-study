@@ -38,6 +38,14 @@ body {
   padding-left: 1.4em;
 }
 
+.report-doc .ProseMirror p.is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
 .report-doc .ProseMirror li p {
   margin-bottom: 0.3em;
 }
