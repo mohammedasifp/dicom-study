@@ -1,4 +1,4 @@
-import { sourceLabel, wadoUrl } from './format.js'
+import { roiFraction, sourceLabel, wadoUrl } from './format.js'
 
 const loadImage = (src) =>
   new Promise((resolve, reject) => {
@@ -8,8 +8,9 @@ const loadImage = (src) =>
     img.src = src
   })
 
-export async function composeRoiImage(source, roi) {
+export async function composeRoiImage(source, rawRoi) {
   const img = await loadImage(wadoUrl(source))
+  const roi = roiFraction(rawRoi, img.naturalWidth, img.naturalHeight)
   const canvas = document.createElement('canvas')
   canvas.width = img.naturalWidth
   canvas.height = img.naturalHeight

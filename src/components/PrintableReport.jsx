@@ -1,6 +1,6 @@
 import { Box } from '@mui/material'
 import { authorColors } from '../theme.js'
-import { formatDate, formatDateTime, percent, sourceLabel } from '../report/format.js'
+import { confidenceText, formatDate, formatDateTime, sourceLabel } from '../report/format.js'
 
 const css = `
 .print-report { display: none; }
@@ -136,7 +136,7 @@ export default function PrintableReport({ report }) {
             <tr>
               <th>AI model</th>
               <td colSpan={3}>
-                {report.model.name} v{report.model.version} · {report.model.zoo} · run {report.model.runId}
+                {report.model.name} v{report.model.version} · {report.model.zoo}{report.model.task ? ` · ${report.model.task}` : ''}
               </td>
               <th>Draft generated</th>
               <td>{formatDateTime(report.draft.generatedAt)}</td>
@@ -178,7 +178,7 @@ export default function PrintableReport({ report }) {
                 <td>{s.observation}</td>
                 <td>{s.source ? sourceLabel(s.source) : 'Study level'}</td>
                 <td>{s.roi ? s.roi.shape : '-'}</td>
-                <td>{percent(s.confidence)}</td>
+                <td>{confidenceText(s.confidence)}</td>
                 <td style={{ textTransform: 'capitalize' }}>{s.status}</td>
               </tr>
             ))}

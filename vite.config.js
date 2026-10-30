@@ -32,14 +32,19 @@ export default defineConfig(({ mode }) => {
   const authorization = `Basic ${Buffer.from(`${user}:${password}`).toString('base64')}`
 
   const orthanc = { target, changeOrigin: true, headers: { Authorization: authorization } }
+  // The skip-warning header stops ngrok's free-tier interstitial page replacing API responses when
+  // BACKEND_URL is an ngrok tunnel; other hosts ignore it.
+  const backend = { target: env.BACKEND_URL || 'http://localhost:4000', changeOrigin: true, headers: { 'ngrok-skip-browser-warning': 'true' } }
 
   return {
     plugins: [react(), ohifConfigOverrides(target, authorization)],
     server: {
+      allowedHosts: ['.ngrok-free.dev', '.ngrok-free.app', '.ngrok.app', '.ngrok.io'],
       proxy: {
         '/ohif': orthanc,
         '/dicom-web': orthanc,
         '/wado': orthanc,
+        '/api': backend,
       },
     },
   }

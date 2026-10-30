@@ -4,6 +4,7 @@ import { mockAiReport } from '../../data/mock/aiReports.js'
 import { appConfig } from '../../config/appConfig.js'
 import { AI_REPORT_STATUS } from '../../constants/study.js'
 import { ApiError } from '../httpClient.js'
+import { readSession } from '../../auth/session.js'
 import { draftFromStudy } from '../../report/draftFromStudy.js'
 import { applyAssignment, applyFinalize, applyReopen, applyReviewProgress, applyStartReview, canOpenReport } from '../../worklist/reviewWorkflow.js'
 
@@ -57,7 +58,7 @@ export const mockWorklistApi = {
   listStudies: () => delay(store()),
   getStudy: async (id) => delay(find(id)),
   listRadiologists: () => delay(mockRadiologists),
-  getCurrentUser: () => delay(mockRadiologists.find((r) => r.id === mockCurrentUserId)),
+  getCurrentUser: () => delay(mockRadiologists.find((r) => r.id === (readSession()?.user.id || mockCurrentUserId))),
   assignStudy: async (id, radiologistId) => update(id, (s) => applyAssignment(s, radiologistId)),
   startReview: async (id, userId) => (canOpenReport(find(id)) ? update(id, (s) => applyStartReview(s, userId)) : reject(aiNotReady(id))),
   setReviewProgress: async (id, reviewed) => update(id, (s) => applyReviewProgress(s, reviewed)),

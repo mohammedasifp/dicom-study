@@ -64,7 +64,9 @@ export function AiReportStatusBadge({ study }) {
   const status = study.aiReportStatus
   const ready = status === AI_REPORT_STATUS.READY
   const hint = [
-    status === AI_REPORT_STATUS.FAILED && study.aiFailureReason ? t(`aiFailure.${study.aiFailureReason}`) : t(`aiReportHint.${status}`),
+    status !== AI_REPORT_STATUS.FAILED
+      ? t(`aiReportHint.${status}`)
+      : study.aiFailureMessage || (study.aiFailureReason ? t(`aiFailure.${study.aiFailureReason}`) : t(`aiReportHint.${status}`)),
     t(`aiReportTime.${status}`, { time: formatDateTime(study.aiReportUpdatedAt, intlLocale) }),
   ].join(' · ')
   return (

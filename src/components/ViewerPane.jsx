@@ -37,10 +37,10 @@ function KeyImageTray({ images, onInsert, onRemove }) {
               flexShrink: 0,
               borderRadius: 1,
               overflow: 'hidden',
-              border: '1px solid #2b3852',
+              border: `1px solid ${chrome.control}`,
               cursor: 'grab',
               bgcolor: '#000',
-              '&:hover': { borderColor: '#a78bfa' },
+              '&:hover': { borderColor: chrome.controlHover },
               '&:hover .remove': { opacity: 1 },
             }}
           >
@@ -104,7 +104,7 @@ export default function ViewerPane({ study, target, keyImages, onCapture, onInse
               startIcon={<PhotoCameraOutlinedIcon />}
               disabled={status !== 'ready'}
               onClick={capture}
-              sx={{ flexShrink: 0, color: '#ddd6fe', borderColor: '#4c3a8a', '&:hover': { borderColor: '#a78bfa', bgcolor: 'rgba(124,58,237,0.18)' } }}
+              sx={{ flexShrink: 0, color: chrome.accent, borderColor: chrome.control, '&:hover': { borderColor: chrome.controlHover, bgcolor: chrome.hover } }}
             >
               Key image
             </Button>
@@ -150,7 +150,7 @@ export default function ViewerPane({ study, target, keyImages, onCapture, onInse
         )}
         {(status === 'offline' || status === 'missing') && (
           <Stack spacing={1.25} sx={{ alignItems: 'center', justifyContent: 'center', height: '100%', px: 4, textAlign: 'center' }}>
-            <VisibilityOffOutlinedIcon sx={{ color: '#475569', fontSize: 34 }} />
+            <VisibilityOffOutlinedIcon sx={{ color: chrome.muted, fontSize: 34 }} />
             <Typography sx={{ color: chrome.text, fontWeight: 600 }}>
               {status === 'offline' ? 'Image server not reachable' : 'Study not found on the image server'}
             </Typography>

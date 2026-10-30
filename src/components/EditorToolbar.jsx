@@ -45,7 +45,7 @@ function AuthorshipToggle({ on, onToggle }) {
           whiteSpace: 'nowrap',
         }}
       >
-        <Box sx={{ width: 3, height: 14, borderRadius: 1, bgcolor: on ? authorColors.ai.bar : '#cbd5e1' }} />
+        <Box sx={{ width: 3, height: 14, borderRadius: 1, bgcolor: on ? authorColors.ai.bar : '#B9CFCD' }} />
         <Typography sx={{ fontSize: '0.72rem', fontWeight: 650, color: on ? '#5b21b6' : 'text.secondary' }}>AI</Typography>
         <Box
           sx={{
@@ -53,7 +53,7 @@ function AuthorshipToggle({ on, onToggle }) {
             borderRadius: 0.75,
             fontSize: '0.72rem',
             fontWeight: 650,
-            bgcolor: on ? authorColors.reviewer.tint : '#f1f5f9',
+            bgcolor: on ? authorColors.reviewer.tint : '#EEF5F4',
             color: on ? authorColors.reviewer.text : 'text.secondary',
           }}
         >
@@ -125,7 +125,7 @@ export default function EditorToolbar({ editor, disabled, showAuthorship, onTogg
                 sx={{
                   width: 30,
                   height: 30,
-                  color: state && state[tool.key] ? 'primary.main' : '#475569',
+                  color: state && state[tool.key] ? 'primary.main' : '#5B6B7F',
                   bgcolor: state && state[tool.key] ? 'primary.light' : 'transparent',
                   '& svg': { fontSize: 19 },
                 }}

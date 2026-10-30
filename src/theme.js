@@ -1,17 +1,26 @@
 import { createTheme } from '@mui/material/styles'
-import { breakpoints, colors, radius, shadows, typography } from './styles/tokens.js'
+import { brand, breakpoints, colors, radius, shadows, typography } from './styles/tokens.js'
 
 export const authorColors = {
-  ai: { main: '#7c3aed', bar: '#8b5cf6', tint: '#f5f3ff', soft: '#c4b5fd' },
+  ai: { main: colors.ai.main, bar: '#8b5cf6', tint: colors.ai.light, soft: '#c4b5fd' },
   reviewer: { main: '#047857', bar: '#34d399', tint: '#d1fae5', text: '#065f46' },
 }
 
 export const chrome = {
-  bg: '#0b1220',
-  surface: '#111a2d',
-  border: '#1f2a40',
-  text: '#e2e8f0',
-  muted: '#8b97ad',
+  bg: brand.deepOceanTeal,
+  surface: '#053F3B',
+  border: 'rgba(153,246,228,0.16)',
+  text: colors.text.inverse,
+  muted: colors.text.inverseMuted,
+  accent: brand.lightTeal,
+  control: brand.oceanTeal,
+  controlHover: brand.softAqua,
+  selected: 'rgba(94,234,212,0.16)',
+  hover: 'rgba(94,234,212,0.08)',
+  cta: brand.softAqua,
+  ctaHover: brand.lightTeal,
+  ctaText: brand.deepOceanTeal,
+  disabledBg: 'rgba(255,255,255,0.08)',
 }
 
 export const theme = createTheme({

@@ -5,7 +5,38 @@ export const DISCLAIMER =
 
 export const DISCLAIMER_SHORT = 'AI-assisted draft · not a diagnosis · must be reviewed by a qualified radiologist'
 
-export function buildStructuredReport({ draft, review, editor }) {
+const blockText = (block) => {
+  if (block.runs) return block.runs.map((r) => r.text).join('')
+  if (block.rows) return block.rows.map((row) => row.map((c) => c.text).join(' | ')).join('\n')
+  return ''
+}
+
+export function sectionText(sections, title) {
+  const section = sections.find((s) => s.title.toLowerCase() === title.toLowerCase())
+  if (!section) return ''
+  return section.blocks.map(blockText).filter(Boolean).join('\n')
+}
+
+const countWords = (text) => (text.match(/[\p{L}\p{N}]+/gu) || []).length
+
+export function measureAuthorship(sections) {
+  let ai = 0
+  let reviewer = 0
+  sections.forEach((section) =>
+    section.blocks.forEach((block) =>
+      (block.runs || []).forEach((run) => {
+        if (run.author === 'ai') ai += countWords(run.text)
+        if (run.author === 'reviewer') reviewer += countWords(run.text)
+      }),
+    ),
+  )
+  const total = ai + reviewer
+  if (!total) return undefined
+  const aiPercent = Math.round((ai / total) * 1000) / 10
+  return { aiPercent, humanPercent: Math.round((100 - aiPercent) * 10) / 10, source: 'editor authorship marks' }
+}
+
+export function buildStructuredReport({ draft, review, editor, events = [] }) {
   const sections = editor ? extractReport(editor.state.doc) : []
   const scans = editor ? scanSuggestions(editor.state.doc) : {}
 
@@ -27,7 +58,7 @@ export function buildStructuredReport({ draft, review, editor }) {
       confidence: s.confidence,
       status: review.statuses[s.id],
       aiText: s.text,
-      finalText: scans[s.id] ? scans[s.id].text : null,
+      finalText: scans[s.id] ? scans[s.id].fullText : null,
       limitation: s.limitation || null,
       source: s.source,
       roi: s.roi,
@@ -38,7 +69,8 @@ export function buildStructuredReport({ draft, review, editor }) {
       reviewer: final ? review.finalized.reviewer : null,
       finalizedAt: final ? review.finalized.at : null,
     },
-    auditTrail: review.history,
+    authorship: measureAuthorship(sections) || null,
+    auditTrail: events,
   }
 }
 

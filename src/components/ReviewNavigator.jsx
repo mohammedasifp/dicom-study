@@ -97,7 +97,6 @@ export default function ReviewNavigator({ counts, discarded, readOnly, onPrev, o
         <Button
           size="small"
           variant="contained"
-          color="success"
           startIcon={<CheckCircleRoundedIcon />}
           onClick={onFinalize}
           sx={{ height: 30, whiteSpace: 'nowrap' }}

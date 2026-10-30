@@ -6,15 +6,16 @@ import { isAiReportReady, isFinalized } from './reviewWorkflow.js'
 // The AI and review groups filter on independent statuses, so a study can appear in one of each.
 const isOpen = (s) => !isFinalized(s)
 
+// `summaryCard`: also reachable from a summary card, so the chip row leaves it out.
 export const QUEUES = [
   { id: 'all', group: 'worklists', match: () => true },
-  { id: 'mine', group: 'worklists', match: (s, ctx) => isOpen(s) && s.assignedTo === ctx.userId },
+  { id: 'mine', group: 'worklists', summaryCard: true, match: (s, ctx) => isOpen(s) && s.assignedTo === ctx.userId },
   { id: 'unassigned', group: 'worklists', match: (s) => isOpen(s) && !s.assignedTo },
-  { id: 'overdue', group: 'worklists', match: (s, ctx) => isOpen(s) && isOverdue(s, ctx.now), tone: 'danger' },
-  { id: 'stat', group: 'priority', match: (s) => isOpen(s) && s.priority === PRIORITY.STAT, tone: 'danger' },
+  { id: 'overdue', group: 'worklists', summaryCard: true, match: (s, ctx) => isOpen(s) && isOverdue(s, ctx.now), tone: 'danger' },
+  { id: 'stat', group: 'priority', summaryCard: true, match: (s) => isOpen(s) && s.priority === PRIORITY.STAT, tone: 'danger' },
   { id: 'urgent', group: 'priority', match: (s) => isOpen(s) && s.priority === PRIORITY.URGENT, tone: 'warning' },
   { id: 'routine', group: 'priority', match: (s) => isOpen(s) && s.priority === PRIORITY.ROUTINE },
-  { id: 'aiReady', group: 'ai', match: (s) => isOpen(s) && isAiReportReady(s) },
+  { id: 'aiReady', group: 'ai', summaryCard: true, match: (s) => isOpen(s) && isAiReportReady(s) },
   { id: 'aiNotReady', group: 'ai', match: (s) => isOpen(s) && !isAiReportReady(s) },
   { id: 'pendingReview', group: 'review', match: (s) => s.reviewStatus === R.PENDING_REVIEW },
   { id: 'underReview', group: 'review', match: (s) => s.reviewStatus === R.UNDER_REVIEW },

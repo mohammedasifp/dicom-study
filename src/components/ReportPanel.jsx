@@ -62,13 +62,34 @@ function FooterButton({ icon, label, children }) {
 
 const popTitle = { fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.06em', color: 'text.secondary', mb: 1 }
 
+function SaveIndicator({ state, onRetry }) {
+  if (!state || state.status === 'idle') return null
+  if (state.status === 'error') {
+    return (
+      <Box
+        component="button"
+        type="button"
+        onClick={onRetry}
+        sx={{ border: 0, bgcolor: 'transparent', font: 'inherit', fontSize: '0.72rem', fontWeight: 600, color: 'error.main', cursor: 'pointer', mr: 1, whiteSpace: 'nowrap' }}
+      >
+        Not saved · Retry
+      </Box>
+    )
+  }
+  const text =
+    state.status === 'saving'
+      ? 'Saving…'
+      : `Saved ${new Date(state.at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`
+  return <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary', mr: 1, whiteSpace: 'nowrap' }}>{text}</Typography>
+}
+
 function HeaderField({ label, value }) {
   return (
     <Box sx={{ minWidth: 0 }}>
-      <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.07em', color: '#94a3b8', textTransform: 'uppercase' }}>
+      <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.07em', color: '#8A98A8', textTransform: 'uppercase' }}>
         {label}
       </Typography>
-      <Typography noWrap sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#1e293b' }}>
+      <Typography noWrap sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#1E293B' }}>
         {value}
       </Typography>
     </Box>
@@ -98,6 +119,8 @@ export default function ReportPanel({
   onTransaction,
   onRestore,
   onFinalize,
+  saveState,
+  onRetrySave,
 }) {
   const readOnly = Boolean(finalized)
   const { patient, study, model } = draft
@@ -105,6 +128,7 @@ export default function ReportPanel({
   return (
     <Stack sx={{ height: '100%', bgcolor: 'background.default', minWidth: 0 }}>
       <EditorToolbar editor={editor} disabled={readOnly} showAuthorship={showAuthorship} onToggleAuthorship={onToggleAuthorship}>
+        {!readOnly && <SaveIndicator state={saveState} onRetry={onRetrySave} />}
         <ReviewNavigator
           counts={counts}
           discarded={discarded}
@@ -126,14 +150,14 @@ export default function ReportPanel({
               maxWidth: 780,
               bgcolor: 'background.paper',
               borderRadius: 1.5,
-              border: '1px solid #e2e8f0',
+              border: '1px solid #DCE7E6',
               boxShadow: '0 1px 3px rgba(15,23,42,0.06)',
               px: { xs: 3, md: 5 },
               pt: 4,
               pb: 5,
             }}
           >
-            <Typography sx={{ fontSize: '1.05rem', fontWeight: 700, letterSpacing: '0.02em', textTransform: 'uppercase', color: '#0f172a' }}>
+            <Typography sx={{ fontSize: '1.05rem', fontWeight: 700, letterSpacing: '0.02em', textTransform: 'uppercase', color: '#1E293B' }}>
               {study.description}
             </Typography>
             <Box
@@ -168,16 +192,16 @@ export default function ReportPanel({
               onTransaction={onTransaction}
             />
 
-            <Box sx={{ mt: 5, pt: 1.5, borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+            <Box sx={{ mt: 5, pt: 1.5, borderTop: '1px solid #DCE7E6', display: 'flex', justifyContent: 'space-between', gap: 2 }}>
               <Box>
-                <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.07em', color: '#94a3b8' }}>REPORTED BY</Typography>
-                <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: finalized ? '#0f172a' : '#94a3b8' }}>
+                <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.07em', color: '#8A98A8' }}>REPORTED BY</Typography>
+                <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: finalized ? '#1E293B' : '#8A98A8' }}>
                   {finalized ? finalized.reviewer : 'Awaiting radiologist sign-off'}
                 </Typography>
               </Box>
               {finalized && (
                 <Box sx={{ textAlign: 'right' }}>
-                  <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.07em', color: '#94a3b8' }}>SIGNED</Typography>
+                  <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.07em', color: '#8A98A8' }}>SIGNED</Typography>
                   <Typography sx={{ fontSize: '0.85rem', fontWeight: 600 }}>{formatDateTime(finalized.at)}</Typography>
                 </Box>
               )}
@@ -212,9 +236,10 @@ export default function ReportPanel({
             {model.name} v{model.version} · {model.zoo}
           </Typography>
           <Typography sx={{ fontSize: '0.74rem', color: 'text.secondary', mb: 1.25 }}>
-            {model.task} · run {model.runId} · {formatDateTime(draft.generatedAt)}
+            {[model.task, draft.generatedAt && formatDateTime(draft.generatedAt)].filter(Boolean).join(' · ')}
           </Typography>
           <Typography sx={popTitle}>UNCERTAINTY & LIMITATIONS</Typography>
+          {draft.uncertainty && <Typography sx={{ fontSize: '0.74rem', lineHeight: 1.55, mb: 0.75 }}>{draft.uncertainty}</Typography>}
           <Box component="ul" sx={{ m: 0, pl: 2.25 }}>
             {draft.limitations.map((item) => (
               <Typography component="li" key={item} sx={{ fontSize: '0.74rem', lineHeight: 1.55, mb: 0.5 }}>
@@ -240,8 +265,8 @@ export default function ReportPanel({
                       px: 0.75,
                       py: 0.25,
                       borderRadius: 1,
-                      bgcolor: '#f1f5f9',
-                      border: '1px solid #e2e8f0',
+                      bgcolor: '#EEF5F4',
+                      border: '1px solid #DCE7E6',
                       textAlign: 'center',
                     }}
                   >

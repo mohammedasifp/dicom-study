@@ -5,8 +5,10 @@ const env = import.meta.env
 export const appConfig = {
   // Base URL of the RIS / worklist REST backend. Empty = same origin.
   apiBaseUrl: env.VITE_API_BASE_URL || '',
-  // Serve worklist data from the in-browser mock until the backend is available.
-  useMockApi: env.VITE_USE_MOCK_API !== 'false',
+  // Worklist data source: 'backend' (dicom-study-backend /api/studies), 'mock' (in-browser data) or 'http' (api/endpoints.js contract).
+  worklistSource: env.VITE_WORKLIST_SOURCE || (env.VITE_USE_MOCK_API === 'true' ? 'mock' : 'backend'),
+  // Sign-in: 'backend' (backend radiologists, demo password), 'mock' (data/mock/accounts.js) or 'http' (api/endpoints.js).
+  authSource: env.VITE_AUTH_SOURCE || (env.VITE_WORKLIST_SOURCE === 'mock' || env.VITE_USE_MOCK_API === 'true' ? 'mock' : 'backend'),
   // Simulated network latency for the mock API, in ms.
   mockLatencyMs: Number(env.VITE_MOCK_LATENCY_MS ?? 350),
   requestTimeoutMs: 20000,

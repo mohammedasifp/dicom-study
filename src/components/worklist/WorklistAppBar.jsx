@@ -1,10 +1,12 @@
-import { Avatar, Box, CircularProgress, IconButton, Stack, Tooltip, Typography } from '@mui/material'
+import { Avatar, Box, Button, CircularProgress, IconButton, Stack, Tooltip, Typography } from '@mui/material'
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded'
+import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded'
 import { useI18n } from '../../i18n/I18nContext.js'
 import LanguageSwitcher from '../common/LanguageSwitcher.jsx'
-import { brand, colors, layout, radius, typography } from '../../styles/tokens.js'
+import BrandMark from '../common/BrandMark.jsx'
+import { brand, colors, layout, typography } from '../../styles/tokens.js'
 
-export default function WorklistAppBar({ currentUser, refreshing, onRefresh, onHome }) {
+export default function WorklistAppBar({ currentUser, refreshing, onRefresh, onHome, onLogout }) {
   const { t } = useI18n()
   return (
     <Stack
@@ -20,9 +22,7 @@ export default function WorklistAppBar({ currentUser, refreshing, onRefresh, onH
         aria-label={t('app.home')}
         sx={{ display: 'flex', alignItems: 'center', gap: 1.25, border: 0, p: 0, bgcolor: 'transparent', color: 'inherit', cursor: 'pointer', font: 'inherit' }}
       >
-        <Box sx={{ width: 32, height: 32, borderRadius: `${radius.md}px`, bgcolor: brand.oceanTeal, display: 'grid', placeItems: 'center', fontWeight: typography.weight.bold, fontSize: typography.size.sm, color: brand.mintWhite, border: `1px solid ${brand.softAqua}` }}>
-          {t('app.logoMark')}
-        </Box>
+        <BrandMark size={34} />
         <Box sx={{ textAlign: 'left' }}>
           <Typography sx={{ fontSize: typography.size.lg, fontWeight: typography.weight.bold, letterSpacing: '0.06em', lineHeight: 1.1 }}>{t('app.name')}</Typography>
           <Typography sx={{ fontSize: typography.size.xs, color: colors.text.inverseMuted, lineHeight: 1.2, display: { xs: 'none', sm: 'block' } }}>
@@ -56,6 +56,29 @@ export default function WorklistAppBar({ currentUser, refreshing, onRefresh, onH
           </Box>
         </Stack>
       )}
+
+      <Tooltip title={t('auth.logout')}>
+        <Button
+          size="small"
+          variant="outlined"
+          onClick={onLogout}
+          startIcon={<LogoutRoundedIcon />}
+          aria-label={t('auth.logout')}
+          sx={{
+            color: brand.lightTeal,
+            borderColor: brand.oceanTeal,
+            minWidth: 0,
+            height: 32,
+            px: { xs: 0.75, sm: 1.25 },
+            '& .MuiButton-startIcon': { mr: { xs: 0, sm: 0.75 }, ml: { xs: 0, sm: -0.25 } },
+            '&:hover': { borderColor: brand.softAqua, bgcolor: 'rgba(94,234,212,0.08)' },
+          }}
+        >
+          <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+            {t('auth.logout')}
+          </Box>
+        </Button>
+      </Tooltip>
     </Stack>
   )
 }

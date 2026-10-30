@@ -39,7 +39,7 @@ export default function QueueNav({ variant = 'sidebar', value, counts, onChange 
   if (variant === 'chips') {
     return (
       <Stack direction="row" spacing={0.75} role="tablist" aria-label={t('queues.label')} sx={{ overflowX: 'auto', pb: 0.5, '&::-webkit-scrollbar': { display: 'none' } }}>
-        {QUEUES.map((q) => {
+        {QUEUES.filter((q) => !q.summaryCard).map((q) => {
           const selected = value === q.id
           return (
             <Chip

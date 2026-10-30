@@ -9,4 +9,6 @@ export const endpoints = {
   aiReport: (id) => `/api/worklist/studies/${encodeURIComponent(id)}/ai-report`,
   radiologists: '/api/radiologists',
   currentUser: '/api/me',
+  login: '/api/auth/login',
+  logout: '/api/auth/logout',
 }

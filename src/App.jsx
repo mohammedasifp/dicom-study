@@ -1,14 +1,15 @@
 import { Suspense, lazy, useEffect, useState } from 'react'
-import Landing from './pages/Landing.jsx'
+import LoginPage from './pages/LoginPage.jsx'
 import RadiologistWorklist from './pages/RadiologistWorklist.jsx'
 import StateMessage from './components/common/StateMessage.jsx'
+import { useAuth } from './auth/AuthContext.js'
 import { ROUTE, navigate, parseHash, paths } from './routes.js'
 
 // The report editor (TipTap) is the heaviest part of the bundle; load it only when a study is opened.
-const ReportingWorkspace = lazy(() => import('./pages/ReportingWorkspace.jsx'))
-const StudyReportPage = lazy(() => import('./pages/StudyReportPage.jsx'))
+const ReportingScreen = lazy(() => import('./pages/ReportingScreen.jsx'))
 
 function App() {
+  const { user, logout } = useAuth()
   const [hash, setHash] = useState(window.location.hash)
 
   useEffect(() => {
@@ -17,21 +18,24 @@ function App() {
     return () => window.removeEventListener('hashchange', onChange)
   }, [])
 
+  // Signed-out users see only the sign-in screen; a deep link opens once they have signed in.
+  if (!user) return <LoginPage />
+
+  // The next person to sign in starts on the worklist, not on the previous user's study.
+  const onLogout = () => {
+    logout()
+    navigate(paths.worklist())
+  }
+
   const route = parseHash(hash)
-  return <Suspense fallback={<StateMessage variant="loading" sx={{ height: '100%' }} />}>{renderRoute(route)}</Suspense>
+  return <Suspense fallback={<StateMessage variant="loading" sx={{ height: '100%' }} />}>{renderRoute(route, onLogout)}</Suspense>
 }
 
-function renderRoute(route) {
-  switch (route.name) {
-    case ROUTE.WORKLIST:
-      return <RadiologistWorklist onOpenStudy={(id) => navigate(paths.studyReport(id))} onHome={() => navigate(paths.landing())} />
-    case ROUTE.STUDY_REPORT:
-      return <StudyReportPage studyId={route.studyId} onExit={() => navigate(paths.worklist())} />
-    case ROUTE.REPORT:
-      return <ReportingWorkspace onExit={() => navigate(paths.landing())} />
-    default:
-      return <Landing onStart={() => navigate(paths.worklist())} />
+function renderRoute(route, onLogout) {
+  if (route.name === ROUTE.STUDY_REPORT) {
+    return <ReportingScreen key={route.studyId} uid={route.studyId} onExit={() => navigate(paths.worklist())} />
   }
+  return <RadiologistWorklist onOpenStudy={(id) => navigate(paths.studyReport(id))} onHome={() => navigate(paths.worklist())} onLogout={onLogout} />
 }
 
 export default App

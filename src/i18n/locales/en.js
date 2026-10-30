@@ -2,9 +2,30 @@
 // Placeholders use {{name}}. Plurals are objects with `one` / `other` (optional `zero`) selected by {{count}}.
 const en = {
   app: {
-    name: 'SVAIM',
-    logoMark: 'S',
+    name: 'SEE BETTER',
     home: 'Go to home page',
+  },
+  login: {
+    headlineStart: 'Start with the',
+    headlineEmphasis: 'most urgent',
+    headlineEnd: 'study.',
+    copyright: '© {{year}} SEE BETTER',
+    title: 'Welcome back',
+    subtitle: 'Sign in to open your worklist.',
+    username: 'Username',
+    usernamePlaceholder: 'Enter your username',
+    usernameRequired: 'Enter your username.',
+    password: 'Password',
+    passwordPlaceholder: 'Enter your password',
+    passwordRequired: 'Enter your password.',
+    showPassword: 'Show password',
+    hidePassword: 'Hide password',
+    submit: 'Sign in',
+    submitting: 'Signing in…',
+    invalid: 'Incorrect username or password. Please try again.',
+  },
+  auth: {
+    logout: 'Log out',
   },
   common: {
     retry: 'Retry',
@@ -21,12 +42,6 @@ const en = {
     notFound: 'The requested record could not be found.',
     aiReportNotReady: 'The AI report for this study is still being generated. You can open it as soon as it is ready.',
     generic: 'Something went wrong. Please try again.',
-  },
-  landing: {
-    title: 'Radiology Report Co-Pilot',
-    subtitle: 'Pick up the most urgent study from your worklist, review the AI-prepared draft next to the images, then sign off your own report.',
-    cta: 'Open Worklist',
-    disclaimer: 'AI output is a draft for clinician review and is not a diagnosis.',
   },
   worklist: {
     title: 'Radiologist reporting worklist',
@@ -105,7 +120,7 @@ const en = {
     accessionNumber: 'Accession number',
     modality: 'Modality',
     description: 'Study',
-    studyDateTime: 'Study date',
+    studyDateTime: 'Scan date',
     waiting: 'Longest waiting',
     referringDoctor: 'Referring doctor',
     aiReportStatus: 'AI report status',
@@ -115,7 +130,7 @@ const en = {
   columns: {
     priority: 'Priority',
     patient: 'Patient',
-    modality: 'Mod.',
+    modality: 'Modality',
     study: 'Study / Accession',
     waiting: 'Waiting',
     aiReport: 'AI Report Status',
@@ -134,7 +149,7 @@ const en = {
   },
   study: {
     accessionShort: 'Acc.',
-    acquiredAt: 'Acquired {{time}}',
+    acquiredAt: 'Scanned {{time}}',
   },
   priority: { STAT: 'STAT', URGENT: 'Urgent', ROUTINE: 'Routine' },
   // Radiologist review: changed only by the radiologist's actions.

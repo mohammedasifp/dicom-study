@@ -1,8 +1,6 @@
-import { draftReport } from '../draftReport.js'
-
 // Mock output of the AI service: the generated report for each study whose AI status is (or will become) READY.
-// Shapes match ReportDraft in api/models.js. BRAINIX keeps the full demo draft with image references and ROIs;
-// the other studies are placeholders without DICOM on PACS, so their suggestions carry no image source.
+// Shapes match ReportDraft in api/models.js. Suggestions carry no image source: with the mock worklist the studies
+// are not on PACS (BRAINIX is, but its image-linked draft now comes from dicom-study-backend).
 //
 // Synthetic demo content for UI development only. Not clinical output.
 
@@ -32,6 +30,20 @@ const LIMITATIONS = {
 
 // [observation, text, confidence, limitation?]
 const REPORTS = {
+  'st-1001': {
+    model: 'neuroMr',
+    technique: 'Multiplanar multisequence MRI of the brain: axial T2 TSE, FLAIR, T2* gradient echo and T1 SE, followed by 3D T1 FFE after intravenous gadolinium.',
+    findings: [
+      ['Intra-axial mass', 'There is a large heterogeneous intra-axial mass centred in the left fronto-parietal white matter, measuring approximately 4.8 x 3.9 cm in axial dimensions.', 0.93],
+      ['Perilesional oedema', 'Extensive surrounding T2/FLAIR hyperintense signal is in keeping with vasogenic oedema and/or infiltrative tumour, extending into the adjacent corona radiata.', 0.88],
+      ['Rim enhancement with necrosis', 'Post-contrast images demonstrate irregular, thick peripheral enhancement with a central non-enhancing component, suggestive of necrosis.', 0.81],
+      ['Mass effect / midline shift', 'There is local mass effect with effacement of the adjacent sulci and partial compression of the left lateral ventricle, with approximately 4 mm of midline shift to the right.', 0.76],
+    ],
+    impression: [
+      ['Primary impression', 'Large heterogeneously enhancing left fronto-parietal intra-axial mass with central necrosis and surrounding oedema. Imaging features favour a high-grade glial neoplasm; solitary metastasis is a less likely differential.', 0.84],
+      ['Recommendation', 'Suggest neurosurgical correlation and, if clinically appropriate, advanced imaging (perfusion / MR spectroscopy).', 0.58, 'Recommendation is generic. Local referral pathways are not known to the model.'],
+    ],
+  },
   'st-1002': {
     model: 'neuroCt',
     technique: 'Non-contrast axial CT of the head with multiplanar reformats.',
@@ -328,7 +340,6 @@ const toSuggestions = (report) =>
 
 // The AI-generated report for a study, or null when the AI service produced none.
 export function mockAiReport(study) {
-  if (study.studyInstanceUID === draftReport.study.studyInstanceUID) return draftReport
   const report = REPORTS[study.id]
   if (!report) return null
   return {

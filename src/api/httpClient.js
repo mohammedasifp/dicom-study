@@ -10,12 +10,19 @@ export class ApiError extends Error {
   }
 }
 
-// The host application installs its token provider once it has authenticated
-// (no auth exists in this POC yet). Returning null sends the request without a token.
+// auth/session.js installs the token provider. Returning null sends the request without a token.
 let getAuthToken = () => null
 export function setAuthTokenProvider(provider) {
   getAuthToken = provider
 }
+
+// Called when an authenticated request comes back 401 (expired or revoked session).
+let onUnauthorized = () => {}
+export function setUnauthorizedHandler(handler) {
+  onUnauthorized = handler
+}
+// For the other request helper (api/client.js), so both end an invalid session the same way.
+export const notifyUnauthorized = () => onUnauthorized()
 
 function buildUrl(path, params) {
   const url = new URL(`${appConfig.apiBaseUrl}${path}`, window.location.origin)
@@ -55,6 +62,7 @@ export async function apiRequest(path, { method = 'GET', params, body, signal } 
 
   const data = response.status === 204 ? null : await response.json().catch(() => null)
   if (!response.ok) {
+    if (response.status === 401 && token) onUnauthorized()
     throw new ApiError(data?.message || `Request failed (${response.status})`, {
       status: response.status,
       // Domain errors (e.g. AI_REPORT_NOT_READY) come through as `code` in the response body.

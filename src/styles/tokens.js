@@ -57,6 +57,8 @@ export const breakpoints = { xs: 0, sm: 600, md: 900, lg: 1200, xl: 1536 }
 export const layout = {
   appBarHeight: 56,
   sidebarWidth: 216,
+  // Narrowest viewport that shows the full worklist table (all columns, no horizontal scroll); cards below it.
+  worklistTableMinWidth: 1280,
 }
 
 // Data table (worklist). Row and header heights are fixed so rows line up and scan evenly.

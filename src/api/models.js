@@ -30,6 +30,7 @@
  * @property {AiReportStatus} aiReportStatus
  * @property {string} aiReportUpdatedAt  ISO 8601, last AI status change
  * @property {AiFailureReason|null} aiFailureReason  Set when aiReportStatus is FAILED
+ * @property {string|null} [aiFailureMessage]  Backend's own failure text, when it provides one
  * @property {ReviewStatus} reviewStatus
  * @property {boolean} imagesAvailable  Study has reached PACS
  * @property {number} seriesCount

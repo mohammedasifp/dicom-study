@@ -27,6 +27,8 @@ import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined'
 import VerticalSplitOutlinedIcon from '@mui/icons-material/VerticalSplitOutlined'
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined'
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded'
+import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded'
+import SlaChip from './SlaChip.jsx'
 import { chrome } from '../theme.js'
 import { formatDate, formatDateTime } from '../report/format.js'
 
@@ -45,8 +47,8 @@ function TwoLine({ primary, secondary, sx }) {
 
 const darkButton = {
   color: chrome.text,
-  borderColor: '#2b3852',
-  '&:hover': { borderColor: '#475675', bgcolor: 'rgba(255,255,255,0.04)' },
+  borderColor: chrome.control,
+  '&:hover': { borderColor: chrome.controlHover, bgcolor: chrome.hover },
 }
 
 const LAYOUTS = [
@@ -67,8 +69,12 @@ export default function WorkspaceHeader({
   onExportPdf,
   onFinalize,
   onReopen,
+  onRerun,
+  onRollback,
+  onSetSla,
 }) {
   const [anchor, setAnchor] = useState(null)
+  const [modelAnchor, setModelAnchor] = useState(null)
   const { patient, study, model } = draft
   const pending = counts.pending
   const progress = counts.total ? (counts.decided / counts.total) * 100 : 0
@@ -94,33 +100,80 @@ export default function WorkspaceHeader({
       />
 
       {model && (
-      <Tooltip
-        title={
-          <>
-            {model.zoo} · {model.task}
-            <br />
-            Run {model.runId} · {formatDateTime(draft.generatedAt)}
-          </>
-        }
+        <>
+      <Stack
+        component="button"
+        type="button"
+        direction="row"
+        spacing={0.75}
+        onClick={(e) => setModelAnchor(e.currentTarget)}
+        title="AI model used for this draft"
+        sx={{
+          alignItems: 'center',
+          display: { xs: 'none', lg: 'flex' },
+          px: 1.25,
+          height: 30,
+          borderRadius: 99,
+          border: '1px solid rgba(196,181,253,0.45)',
+          bgcolor: 'rgba(124,58,237,0.14)',
+          flexShrink: 0,
+          cursor: 'pointer',
+          font: 'inherit',
+          '&:hover': { borderColor: '#c4b5fd' },
+        }}
       >
-        <Stack
-          direction="row"
-          spacing={0.75}
-          sx={{ alignItems: 'center', display: { xs: 'none', lg: 'flex' },
-            px: 1.25,
-            height: 30,
-            borderRadius: 99,
-            border: '1px solid #3b2f6b',
-            bgcolor: 'rgba(124,58,237,0.14)',
-            flexShrink: 0,
+        <AutoAwesomeRoundedIcon sx={{ fontSize: 15, color: '#c4b5fd' }} />
+        <Typography sx={{ fontSize: '0.74rem', color: '#ddd6fe', fontWeight: 600, whiteSpace: 'nowrap' }}>
+          {model.name} <Box component="span" sx={{ color: '#a78bfa' }}>v{model.version}</Box>
+        </Typography>
+        <ExpandMoreRoundedIcon sx={{ fontSize: 16, color: '#a78bfa' }} />
+      </Stack>
+      <Menu
+        anchorEl={modelAnchor}
+        open={Boolean(modelAnchor)}
+        onClose={() => setModelAnchor(null)}
+        slotProps={{ paper: { sx: { mt: 0.75, minWidth: 280 } } }}
+      >
+        <Box sx={{ px: 2, py: 1 }}>
+          <Typography sx={{ fontSize: '0.84rem', fontWeight: 700 }}>
+            {model.name} · v{model.version}
+          </Typography>
+          <Typography sx={{ fontSize: '0.74rem', color: 'text.secondary' }}>
+            {[model.zoo, model.id, model.task].filter(Boolean).join(' · ')}
+          </Typography>
+          {draft.generatedAt && (
+            <Typography sx={{ fontSize: '0.74rem', color: 'text.secondary' }}>Draft generated {formatDateTime(draft.generatedAt)}</Typography>
+          )}
+        </Box>
+        <Divider />
+        <MenuItem
+          disabled={Boolean(finalized)}
+          onClick={() => {
+            setModelAnchor(null)
+            onRerun()
           }}
         >
-          <AutoAwesomeRoundedIcon sx={{ fontSize: 15, color: '#c4b5fd' }} />
-          <Typography sx={{ fontSize: '0.74rem', color: '#ddd6fe', fontWeight: 600, whiteSpace: 'nowrap' }}>
-            {model.name} <Box component="span" sx={{ color: '#a78bfa' }}>v{model.version}</Box>
-          </Typography>
-        </Stack>
-      </Tooltip>
+          <ListItemIcon>
+            <ReplayRoundedIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="Run AI again…" secondary="Choose a model or add an instruction" />
+        </MenuItem>
+        {onRollback && (
+          <MenuItem
+            disabled={Boolean(finalized)}
+            onClick={() => {
+              setModelAnchor(null)
+              onRollback()
+            }}
+          >
+            <ListItemIcon>
+              <HistoryRoundedIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary="Restore previous AI draft" secondary="Swap back to the draft before the last AI run" />
+          </MenuItem>
+        )}
+      </Menu>
+        </>
       )}
 
       <Box sx={{ flex: 1 }} />
@@ -136,9 +189,9 @@ export default function WorkspaceHeader({
             width: 34,
             height: 32,
             color: chrome.muted,
-            borderColor: '#2b3852',
-            '&.Mui-selected': { color: '#fff', bgcolor: '#1e2a44' },
-            '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' },
+            borderColor: chrome.control,
+            '&.Mui-selected': { color: chrome.text, bgcolor: chrome.selected },
+            '&:hover': { bgcolor: chrome.hover },
           },
         }}
       >
@@ -151,7 +204,7 @@ export default function WorkspaceHeader({
 
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexShrink: 0 }}>
         <Tooltip title="Audit trail">
-          <IconButton size="small" onClick={onHistory} sx={{ color: chrome.muted, border: '1px solid #2b3852' }}>
+          <IconButton size="small" onClick={onHistory} sx={{ color: chrome.accent, border: `1px solid ${chrome.control}` }}>
             <HistoryRoundedIcon fontSize="small" />
           </IconButton>
         </Tooltip>
@@ -200,10 +253,12 @@ export default function WorkspaceHeader({
 
       <Divider orientation="vertical" flexItem sx={{ borderColor: chrome.border, my: 1.5 }} />
 
+      {!finalized && <SlaChip sla={study.sla} onSet={onSetSla} />}
+
       {finalized ? (
         <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', flexShrink: 0 }}>
           <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
-            <TaskAltRoundedIcon sx={{ fontSize: 18, color: '#4ade80' }} />
+            <TaskAltRoundedIcon sx={{ fontSize: 18, color: chrome.cta }} />
             <TwoLine primary="Final Reviewed Draft" secondary={finalized.reviewer} />
           </Stack>
           <Button size="small" variant="outlined" startIcon={<LockOpenRoundedIcon />} onClick={onReopen} sx={darkButton}>
@@ -214,13 +269,13 @@ export default function WorkspaceHeader({
         <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', flexShrink: 0 }}>
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }} title={`${counts.decided} of ${counts.total} AI points reviewed`}>
             <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-              <CircularProgress variant="determinate" value={100} size={26} thickness={5} sx={{ color: '#1f2a40' }} />
+              <CircularProgress variant="determinate" value={100} size={26} thickness={5} sx={{ color: 'rgba(255,255,255,0.14)' }} />
               <CircularProgress
                 variant="determinate"
                 value={progress}
                 size={26}
                 thickness={5}
-                sx={{ color: pending ? '#fbbf24' : '#4ade80', position: 'absolute', left: 0 }}
+                sx={{ color: chrome.cta, position: 'absolute', left: 0 }}
               />
             </Box>
             <TwoLine
@@ -233,12 +288,14 @@ export default function WorkspaceHeader({
               <Button
                 size="small"
                 variant="contained"
-                color="success"
                 startIcon={<TaskAltRoundedIcon />}
                 disabled={pending > 0}
                 onClick={onFinalize}
                 sx={{
-                  '&.Mui-disabled': { bgcolor: '#1a2438', color: '#56627b' },
+                  bgcolor: chrome.cta,
+                  color: chrome.ctaText,
+                  '&:hover': { bgcolor: chrome.ctaHover },
+                  '&.Mui-disabled': { bgcolor: chrome.disabledBg, color: chrome.muted },
                   ...(pending === 0 && {
                     animation: 'finalize-ready 1.6s ease-out 2',
                     '@keyframes finalize-ready': {
