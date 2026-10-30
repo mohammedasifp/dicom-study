@@ -93,7 +93,6 @@ export function toDraft({ study, report, ai }) {
       accessionNumber: study.accessionNumber || '-',
       description: study.description || [study.modality, study.bodyPart].filter(Boolean).join(' ') || 'Study',
       modality: study.modality || '-',
-      // BACKEND SPEC (B12): `studyTime`; until then only the study date is known.
       studyDate: toIsoDateTime(study.studyDate, study.studyTime),
       referringPhysician: study.referringPhysician || '-',
       status: study.status,

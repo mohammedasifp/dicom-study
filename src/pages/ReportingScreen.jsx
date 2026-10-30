@@ -3,7 +3,8 @@ import { Alert, Box, Button, CircularProgress, IconButton, Snackbar, Stack, Typo
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
 import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded'
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded'
-import { getReportData, getStudy, openEventStream } from '../api/backend.js'
+import { assignRadiologist, getReportData, getStudy, openEventStream } from '../api/backend.js'
+import { readSession } from '../auth/session.js'
 import { toDraft } from '../api/adapter.js'
 import RerunDialog from '../components/RerunDialog.jsx'
 import ReportingWorkspace from './ReportingWorkspace.jsx'
@@ -81,6 +82,13 @@ export default function ReportingScreen({ uid, onExit }) {
     const timer = setInterval(load, 5000)
     return () => clearInterval(timer)
   }, [state.phase, load])
+
+  const unclaimed = Boolean(state.study && state.study.status !== 'REPORTED' && !state.study.assignedTo && !(state.study.assignment && state.study.assignment.radiologist))
+  useEffect(() => {
+    const session = readSession()
+    const me = session && session.user && session.user.id
+    if (unclaimed && me) assignRadiologist(uid, me).catch(() => {})
+  }, [uid, unclaimed])
 
   const rerun = (
     <RerunDialog

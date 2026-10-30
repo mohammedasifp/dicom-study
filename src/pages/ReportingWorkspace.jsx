@@ -4,7 +4,7 @@ import { Group, Panel, Separator } from 'react-resizable-panels'
 import { initReview, reviewCounts, reviewReducer } from '../report/reviewReducer.js'
 import { buildStructuredReport, downloadJson } from '../report/exportReport.js'
 import { keyImageContent } from '../report/keyImages.js'
-import { getReviewer, setReviewer } from '../report/reviewer.js'
+import { getReviewer } from '../report/reviewer.js'
 import { finaliseReport, listEvents, markViewed, reopenReport, rollbackAi, setSla } from '../api/backend.js'
 import { buildSavePayload, useBackendSync } from '../hooks/useBackendSync.js'
 import { useImageUploads } from '../hooks/useImageUploads.js'
@@ -212,7 +212,6 @@ export default function ReportingWorkspace({ uid, draft, onExit, onRerun, onSlaC
 
   const finalize = async (reviewer) => {
     setFinalizeOpen(false)
-    setReviewer(reviewer)
     try {
       await flush()
       const saved = await finaliseReport(uid, { reviewer, authorship: editor ? buildSavePayload(editor).authorship : undefined })
