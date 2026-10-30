@@ -57,6 +57,7 @@ const en = {
   },
   queues: {
     label: 'Worklist views',
+    openMenu: 'Show worklist views',
     groups: { worklists: 'Worklists', priority: 'Open by priority', ai: 'AI report', review: 'Radiologist review' },
     all: 'All studies',
     mine: 'My worklist',
