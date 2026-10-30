@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Box } from '@mui/material'
 import ImageNotSupportedOutlinedIcon from '@mui/icons-material/ImageNotSupportedOutlined'
 import { roiFraction, wadoUrl } from '../report/format.js'
+import { chrome } from '../theme.js'
 
 export default function RoiThumbnail({ source, roi, size = 84, compact = false }) {
   const [failed, setFailed] = useState(false)
@@ -19,7 +20,7 @@ export default function RoiThumbnail({ source, roi, size = 84, compact = false }
         borderRadius: compact ? 1 : 1.5,
         overflow: 'hidden',
         bgcolor: '#000',
-        outline: compact ? '1px solid #2b3852' : 'none',
+        outline: compact ? `1px solid ${chrome.control}` : 'none',
         display: 'grid',
         placeItems: 'center',
       }}

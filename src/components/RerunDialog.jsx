@@ -9,8 +9,6 @@ import {
   MenuItem,
   Stack,
   TextField,
-  ToggleButton,
-  ToggleButtonGroup,
   Typography,
 } from '@mui/material'
 import { listModels, retryAnalysis } from '../api/backend.js'
@@ -19,7 +17,6 @@ export default function RerunDialog({ open, uid, modality, currentModelId, repla
   const [models, setModels] = useState(null)
   const [model, setModel] = useState('')
   const [prompt, setPrompt] = useState('')
-  const [mode, setMode] = useState('chunk')
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
 
@@ -43,7 +40,7 @@ export default function RerunDialog({ open, uid, modality, currentModelId, repla
     setBusy(true)
     setError(null)
     try {
-      await retryAnalysis(uid, { model: model || undefined, prompt: prompt.trim() || undefined, mode })
+      await retryAnalysis(uid, { model: model || undefined, prompt: prompt.trim() || undefined })
       onStarted()
     } catch (err) {
       setError(err.message)
@@ -91,17 +88,6 @@ export default function RerunDialog({ open, uid, modality, currentModelId, repla
             value={prompt}
             onChange={(e) => setPrompt(e.target.value.slice(0, 2000))}
           />
-          <Stack spacing={0.5}>
-            <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary' }}>How images are sent</Typography>
-            <ToggleButtonGroup size="small" exclusive value={mode} onChange={(_e, v) => v && setMode(v)}>
-              <ToggleButton value="chunk" sx={{ textTransform: 'none', px: 1.5 }}>
-                In batches
-              </ToggleButton>
-              <ToggleButton value="stream" sx={{ textTransform: 'none', px: 1.5 }}>
-                Streamed
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </Stack>
           {error && <Alert severity="error">{error}</Alert>}
         </Stack>
       </DialogContent>

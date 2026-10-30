@@ -47,8 +47,8 @@ function TwoLine({ primary, secondary, sx }) {
 
 const darkButton = {
   color: chrome.text,
-  borderColor: '#2b3852',
-  '&:hover': { borderColor: '#475675', bgcolor: 'rgba(255,255,255,0.04)' },
+  borderColor: chrome.control,
+  '&:hover': { borderColor: chrome.controlHover, bgcolor: chrome.hover },
 }
 
 const LAYOUTS = [
@@ -114,12 +114,12 @@ export default function WorkspaceHeader({
           px: 1.25,
           height: 30,
           borderRadius: 99,
-          border: '1px solid #3b2f6b',
+          border: '1px solid rgba(196,181,253,0.45)',
           bgcolor: 'rgba(124,58,237,0.14)',
           flexShrink: 0,
           cursor: 'pointer',
           font: 'inherit',
-          '&:hover': { borderColor: '#6d5bb0' },
+          '&:hover': { borderColor: '#c4b5fd' },
         }}
       >
         <AutoAwesomeRoundedIcon sx={{ fontSize: 15, color: '#c4b5fd' }} />
@@ -189,9 +189,9 @@ export default function WorkspaceHeader({
             width: 34,
             height: 32,
             color: chrome.muted,
-            borderColor: '#2b3852',
-            '&.Mui-selected': { color: '#fff', bgcolor: '#1e2a44' },
-            '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' },
+            borderColor: chrome.control,
+            '&.Mui-selected': { color: chrome.text, bgcolor: chrome.selected },
+            '&:hover': { bgcolor: chrome.hover },
           },
         }}
       >
@@ -204,7 +204,7 @@ export default function WorkspaceHeader({
 
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexShrink: 0 }}>
         <Tooltip title="Audit trail">
-          <IconButton size="small" onClick={onHistory} sx={{ color: chrome.muted, border: '1px solid #2b3852' }}>
+          <IconButton size="small" onClick={onHistory} sx={{ color: chrome.accent, border: `1px solid ${chrome.control}` }}>
             <HistoryRoundedIcon fontSize="small" />
           </IconButton>
         </Tooltip>
@@ -258,7 +258,7 @@ export default function WorkspaceHeader({
       {finalized ? (
         <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', flexShrink: 0 }}>
           <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
-            <TaskAltRoundedIcon sx={{ fontSize: 18, color: '#4ade80' }} />
+            <TaskAltRoundedIcon sx={{ fontSize: 18, color: chrome.cta }} />
             <TwoLine primary="Final Reviewed Draft" secondary={finalized.reviewer} />
           </Stack>
           <Button size="small" variant="outlined" startIcon={<LockOpenRoundedIcon />} onClick={onReopen} sx={darkButton}>
@@ -269,13 +269,13 @@ export default function WorkspaceHeader({
         <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', flexShrink: 0 }}>
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }} title={`${counts.decided} of ${counts.total} AI points reviewed`}>
             <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-              <CircularProgress variant="determinate" value={100} size={26} thickness={5} sx={{ color: '#1f2a40' }} />
+              <CircularProgress variant="determinate" value={100} size={26} thickness={5} sx={{ color: 'rgba(255,255,255,0.14)' }} />
               <CircularProgress
                 variant="determinate"
                 value={progress}
                 size={26}
                 thickness={5}
-                sx={{ color: pending ? '#fbbf24' : '#4ade80', position: 'absolute', left: 0 }}
+                sx={{ color: chrome.cta, position: 'absolute', left: 0 }}
               />
             </Box>
             <TwoLine
@@ -288,12 +288,14 @@ export default function WorkspaceHeader({
               <Button
                 size="small"
                 variant="contained"
-                color="success"
                 startIcon={<TaskAltRoundedIcon />}
                 disabled={pending > 0}
                 onClick={onFinalize}
                 sx={{
-                  '&.Mui-disabled': { bgcolor: '#1a2438', color: '#56627b' },
+                  bgcolor: chrome.cta,
+                  color: chrome.ctaText,
+                  '&:hover': { bgcolor: chrome.ctaHover },
+                  '&.Mui-disabled': { bgcolor: chrome.disabledBg, color: chrome.muted },
                   ...(pending === 0 && {
                     animation: 'finalize-ready 1.6s ease-out 2',
                     '@keyframes finalize-ready': {

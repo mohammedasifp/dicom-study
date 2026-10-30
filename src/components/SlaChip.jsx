@@ -14,8 +14,8 @@ function describe(sla, now) {
 }
 
 const TONE = {
-  none: { color: chrome.muted, border: '#2b3852', bg: 'transparent' },
-  ok: { color: '#cbd5e1', border: '#2b3852', bg: 'transparent' },
+  none: { color: chrome.accent, border: chrome.control, bg: 'transparent' },
+  ok: { color: chrome.text, border: chrome.control, bg: 'transparent' },
   soon: { color: '#fcd34d', border: '#6b5310', bg: 'rgba(251,191,36,0.1)' },
   late: { color: '#fca5a5', border: '#7f1d1d', bg: 'rgba(239,68,68,0.14)' },
 }

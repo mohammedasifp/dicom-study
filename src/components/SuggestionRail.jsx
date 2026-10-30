@@ -13,7 +13,7 @@ import { confidenceLevel, confidenceText } from '../report/format.js'
 import { composeRoiImage, setKeyImageDrag, suggestionCaption } from '../report/keyImages.js'
 
 const GAP = 8
-const CONF_TEXT = { success: '#15803d', warning: '#b45309', error: '#dc2626', none: '#94a3b8' }
+const CONF_TEXT = { success: '#15803d', warning: '#b45309', error: '#dc2626', none: '#8A98A8' }
 
 const STATUS = {
   pending: { label: 'To review', color: '#6d28d9', icon: null },
@@ -25,7 +25,7 @@ function SourceLink({ suggestion, showing, onClick }) {
   const src = suggestion.source
   if (!src) {
     return (
-      <Typography sx={{ fontSize: '0.68rem', color: '#94a3b8' }} noWrap>
+      <Typography sx={{ fontSize: '0.68rem', color: '#8A98A8' }} noWrap>
         Study-level, no source image
       </Typography>
     )
@@ -50,7 +50,7 @@ function SourceLink({ suggestion, showing, onClick }) {
         font: 'inherit',
         fontSize: '0.68rem',
         fontWeight: 600,
-        color: showing ? '#6d28d9' : '#475569',
+        color: showing ? '#6d28d9' : '#5B6B7F',
         cursor: 'pointer',
         '&:hover': { color: '#6d28d9', textDecoration: 'underline' },
       }}
@@ -114,15 +114,15 @@ function RailCard({ suggestion, status, active, showing, readOnly, onAction, onH
         transition: 'top 160ms ease, box-shadow 140ms, border-color 140ms',
         bgcolor: 'background.paper',
         border: '1px solid',
-        borderColor: active ? '#c4b5fd' : '#e2e8f0',
-        borderLeft: `3px solid ${status === 'pending' ? '#8b5cf6' : active ? '#c4b5fd' : '#e2e8f0'}`,
+        borderColor: active ? '#c4b5fd' : '#DCE7E6',
+        borderLeft: `3px solid ${status === 'pending' ? '#8b5cf6' : active ? '#c4b5fd' : '#DCE7E6'}`,
         borderRadius: 2,
         px: 1.25,
         py: 0.9,
         cursor: 'pointer',
         boxShadow: active ? '0 6px 20px rgba(76,29,149,0.12)' : 'none',
         zIndex: active ? 2 : 1,
-        '&:hover': { borderColor: active ? '#c4b5fd' : '#cbd5e1' },
+        '&:hover': { borderColor: active ? '#c4b5fd' : '#B9CFCD' },
       }}
     >
       <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center', minWidth: 0 }}>
@@ -167,12 +167,12 @@ function RailCard({ suggestion, status, active, showing, readOnly, onAction, onH
           <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start' }}>
             {suggestion.source && <DraggableEvidence suggestion={suggestion} />}
             <Box sx={{ minWidth: 0, flex: 1 }}>
-              <Typography sx={{ fontSize: '0.66rem', color: '#64748b' }}>Model confidence</Typography>
+              <Typography sx={{ fontSize: '0.66rem', color: '#5B6B7F' }}>Model confidence</Typography>
               <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: CONF_TEXT[level.color] }}>
                 {typeof suggestion.confidence === 'number' ? `${level.label} · ${confidenceText(suggestion.confidence)}` : 'Not given by the model'}
               </Typography>
               {typeof suggestion.confidence === 'number' && (
-                <Box sx={{ mt: 0.5, height: 4, borderRadius: 2, bgcolor: '#f1f5f9', overflow: 'hidden' }}>
+                <Box sx={{ mt: 0.5, height: 4, borderRadius: 2, bgcolor: '#EEF5F4', overflow: 'hidden' }}>
                   <Box sx={{ width: confidenceText(suggestion.confidence), height: '100%', bgcolor: CONF_TEXT[level.color] }} />
                 </Box>
               )}
@@ -207,7 +207,7 @@ function RailCard({ suggestion, status, active, showing, readOnly, onAction, onH
                     color="inherit"
                     startIcon={<CloseRoundedIcon />}
                     onClick={() => onAction('discard', suggestion.id)}
-                    sx={{ flex: 1, height: 28, fontSize: '0.74rem', color: '#475569', borderColor: '#cbd5e1' }}
+                    sx={{ flex: 1, height: 28, fontSize: '0.74rem', color: '#5B6B7F', borderColor: '#B9CFCD' }}
                     title="Discard (Alt+Backspace)"
                   >
                     Discard
@@ -215,13 +215,13 @@ function RailCard({ suggestion, status, active, showing, readOnly, onAction, onH
                 </>
               )}
               {status === 'accepted' && (
-                <Button size="small" color="inherit" startIcon={<ReplayRoundedIcon />} onClick={() => onAction('unaccept', suggestion.id)} sx={{ height: 28, fontSize: '0.72rem', color: '#475569' }}>
+                <Button size="small" color="inherit" startIcon={<ReplayRoundedIcon />} onClick={() => onAction('unaccept', suggestion.id)} sx={{ height: 28, fontSize: '0.72rem', color: '#5B6B7F' }}>
                   Undo accept
                 </Button>
               )}
               {status === 'edited' && (
                 <Tooltip title={`AI wording: "${suggestion.text}"`}>
-                  <Button size="small" color="inherit" startIcon={<ReplayRoundedIcon />} onClick={() => onAction('revert', suggestion.id)} sx={{ height: 28, fontSize: '0.72rem', color: '#475569' }}>
+                  <Button size="small" color="inherit" startIcon={<ReplayRoundedIcon />} onClick={() => onAction('revert', suggestion.id)} sx={{ height: 28, fontSize: '0.72rem', color: '#5B6B7F' }}>
                     Revert to AI wording
                   </Button>
                 </Tooltip>

@@ -75,7 +75,7 @@ export default function HistoryDrawer({ open, onClose, events, suggestions }) {
         )}
         {events && !visible.length && <Typography sx={{ color: 'text.secondary', fontSize: '0.84rem' }}>No events yet.</Typography>}
         {[...visible].reverse().map((e, i, arr) => {
-          const color = ACTOR_COLOR[e.actor] || '#64748b'
+          const color = ACTOR_COLOR[e.actor] || '#5B6B7F'
           const text = detail(e, byId)
           return (
             <Stack key={e._id} direction="row" spacing={1.5}>
