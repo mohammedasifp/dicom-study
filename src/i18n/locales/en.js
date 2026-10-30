@@ -2,7 +2,7 @@
 // Placeholders use {{name}}. Plurals are objects with `one` / `other` (optional `zero`) selected by {{count}}.
 const en = {
   app: {
-    name: 'SVAIM',
+    name: 'SEE BETTER',
     logoMark: 'S',
     home: 'Go to home page',
   },
@@ -20,12 +20,6 @@ const en = {
     forbidden: 'You do not have permission to do this.',
     notFound: 'The requested record could not be found.',
     generic: 'Something went wrong. Please try again.',
-  },
-  landing: {
-    title: 'Radiology Report Co-Pilot',
-    subtitle: 'Pick up the most urgent study from your worklist, review the AI-prepared draft next to the images, then sign off your own report.',
-    cta: 'Open Worklist',
-    disclaimer: 'AI output is a draft for clinician review and is not a diagnosis.',
   },
   worklist: {
     title: 'Radiologist reporting worklist',

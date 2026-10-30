@@ -3,7 +3,7 @@ import { useI18n } from '../../i18n/I18nContext.js'
 import { formatDateTime } from '../../i18n/format.js'
 import { PRIORITY, STUDY_STATUS } from '../../constants/study.js'
 import { colors, priorityColors, typography } from '../../styles/tokens.js'
-import { AiDraftIndicator, ModalityBadge, PriorityBadge, StatusBadge } from './StudyBadges.jsx'
+import { ModalityBadge, PriorityBadge, StatusBadge } from './StudyBadges.jsx'
 import { AssigneeLabel } from './Assignment.jsx'
 import SlaTimer from './SlaTimer.jsx'
 import StudyActions from './StudyActions.jsx'
@@ -58,7 +58,6 @@ export default function StudyCardList({ studies, now, radiologists, radiologists
             <Stack direction="row" sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1, mt: 1 }}>
               <StatusBadge status={study.status} />
               <SlaTimer study={study} now={now} />
-              <AiDraftIndicator status={study.aiDraftStatus} />
               <Box sx={{ ml: 'auto' }}>
                 <AssigneeLabel radiologist={radiologistsById[study.assignedTo]} isCurrentUser={study.assignedTo === currentUserId} />
               </Box>

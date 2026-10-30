@@ -3,14 +3,14 @@ import { useI18n } from '../../i18n/I18nContext.js'
 import { formatDate, formatDayMonth, formatTime } from '../../i18n/format.js'
 import { PRIORITY, STUDY_STATUS } from '../../constants/study.js'
 import { colors, priorityColors, table, typography } from '../../styles/tokens.js'
-import { AiDraftIndicator, ModalityBadge, PriorityBadge, StatusBadge } from './StudyBadges.jsx'
+import { ModalityBadge, PriorityBadge, StatusBadge } from './StudyBadges.jsx'
 import { AssigneeLabel } from './Assignment.jsx'
 import SlaTimer from './SlaTimer.jsx'
 import StudyActions from './StudyActions.jsx'
 
 // Columns fill the available width without horizontal scrolling. Compact columns have a fixed size
 // that fits their content; text-heavy columns share the remaining space by weight (fr) above a minimum.
-// Minimums add up to ~1146px, so the table is used from the `lg` breakpoint and cards below it.
+// Minimums add up to ~1094px, so the table is used from the `lg` breakpoint and cards below it.
 const COLUMNS = [
   { id: 'priority', sortField: 'priority', track: '84px' },
   { id: 'patient', sortField: 'patient', track: 'minmax(141px, 1.4fr)' },
@@ -20,7 +20,6 @@ const COLUMNS = [
   { id: 'waiting', sortField: 'waiting', track: '88px' },
   { id: 'status', sortField: 'status', track: '124px' },
   { id: 'assignedTo', sortField: 'assignedTo', track: 'minmax(104px, 1fr)' },
-  { id: 'aiDraft', track: '52px', align: 'center' },
   { id: 'referringDoctor', sortField: 'referringDoctor', track: 'minmax(84px, 0.9fr)' },
   { id: 'actions', track: '184px', align: 'right' },
 ]
@@ -97,8 +96,6 @@ export default function StudyTable({ studies, now, sort, onSortChange, radiologi
         return <StatusBadge status={study.status} />
       case 'assignedTo':
         return <AssigneeLabel radiologist={radiologistsById[study.assignedTo]} isCurrentUser={study.assignedTo === currentUserId} />
-      case 'aiDraft':
-        return <AiDraftIndicator status={study.aiDraftStatus} iconOnly />
       case 'referringDoctor':
         return (
           <Typography sx={{ fontSize: typography.size.sm, ...ellipsis }} title={study.referringDoctor}>

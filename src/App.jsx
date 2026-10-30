@@ -1,5 +1,4 @@
 import { Suspense, lazy, useEffect, useState } from 'react'
-import Landing from './pages/Landing.jsx'
 import RadiologistWorklist from './pages/RadiologistWorklist.jsx'
 import StateMessage from './components/common/StateMessage.jsx'
 import { ROUTE, navigate, parseHash, paths } from './routes.js'
@@ -23,14 +22,12 @@ function App() {
 
 function renderRoute(route) {
   switch (route.name) {
-    case ROUTE.WORKLIST:
-      return <RadiologistWorklist onOpenStudy={(id) => navigate(paths.studyReport(id))} onHome={() => navigate(paths.landing())} />
     case ROUTE.STUDY_REPORT:
       return <StudyReportPage studyId={route.studyId} onExit={() => navigate(paths.worklist())} />
     case ROUTE.REPORT:
-      return <ReportingWorkspace onExit={() => navigate(paths.landing())} />
+      return <ReportingWorkspace onExit={() => navigate(paths.worklist())} />
     default:
-      return <Landing onStart={() => navigate(paths.worklist())} />
+      return <RadiologistWorklist onOpenStudy={(id) => navigate(paths.studyReport(id))} onHome={() => navigate(paths.worklist())} />
   }
 }
 

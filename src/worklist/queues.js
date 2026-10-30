@@ -4,12 +4,13 @@ import { isOverdue } from './sla.js'
 // Quick-access views. ctx = { userId, now }. Labels: i18n `queues.<id>`, group labels: `queues.groups.<group>`.
 const isOpen = (s) => s.status !== S.COMPLETED
 
+// `summaryCard`: also reachable from a summary card, so the chip row leaves it out.
 export const QUEUES = [
   { id: 'all', group: 'worklists', match: () => true },
-  { id: 'mine', group: 'worklists', match: (s, ctx) => isOpen(s) && s.assignedTo === ctx.userId },
+  { id: 'mine', group: 'worklists', summaryCard: true, match: (s, ctx) => isOpen(s) && s.assignedTo === ctx.userId },
   { id: 'unassigned', group: 'worklists', match: (s) => isOpen(s) && !s.assignedTo },
-  { id: 'overdue', group: 'worklists', match: (s, ctx) => isOpen(s) && isOverdue(s, ctx.now), tone: 'danger' },
-  { id: 'stat', group: 'priority', match: (s) => isOpen(s) && s.priority === PRIORITY.STAT, tone: 'danger' },
+  { id: 'overdue', group: 'worklists', summaryCard: true, match: (s, ctx) => isOpen(s) && isOverdue(s, ctx.now), tone: 'danger' },
+  { id: 'stat', group: 'priority', summaryCard: true, match: (s) => isOpen(s) && s.priority === PRIORITY.STAT, tone: 'danger' },
   { id: 'urgent', group: 'priority', match: (s) => isOpen(s) && s.priority === PRIORITY.URGENT, tone: 'warning' },
   { id: 'routine', group: 'priority', match: (s) => isOpen(s) && s.priority === PRIORITY.ROUTINE },
   { id: 'new', group: 'status', match: (s) => s.status === S.NEW },
