@@ -47,6 +47,16 @@ export const finaliseReport = (uid, { reviewer, authorship }) =>
 export const reopenReport = (uid, { reviewer, reason }) =>
   request('POST', `/api/studies/${enc(uid)}/report/reopen`, { reviewer, reason })
 
+export const getOpsDashboard = () => request('GET', '/api/ops/dashboard')
+
+export const getOpsSummary = () => request('GET', '/api/ops/summary')
+
+export const acknowledgeException = (id) => request('POST', `/api/ops/exceptions/${enc(id)}/acknowledge`)
+
+export const assignException = (id, radiologistId) => request('PUT', `/api/ops/exceptions/${enc(id)}/assignee`, { radiologistId })
+
+export const resolveException = (id, note) => request('POST', `/api/ops/exceptions/${enc(id)}/resolve`, { note })
+
 export const uploadReportImage = (uid, dataUrl) => request('POST', `/api/studies/${enc(uid)}/report/images`, { dataUrl })
 
 const parseJson = (text) => {

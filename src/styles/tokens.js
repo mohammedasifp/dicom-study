@@ -99,6 +99,19 @@ export const slaColors = {
   DONE: colors.text.muted,
 }
 
+export const severityColors = {
+  CRITICAL: { fg: colors.danger.dark, bg: colors.danger.light, border: colors.danger.border, bar: colors.danger.main },
+  HIGH: { fg: colors.warning.dark, bg: colors.warning.light, border: colors.warning.border, bar: colors.warning.main },
+  MEDIUM: { fg: colors.info.dark, bg: colors.info.light, border: colors.info.border, bar: colors.info.main },
+  LOW: { fg: colors.neutral.dark, bg: colors.neutral.light, border: colors.neutral.border, bar: colors.neutral.main },
+}
+
+export const exceptionStatusColors = {
+  OPEN: { fg: colors.danger.dark, bg: colors.danger.light, border: colors.danger.border },
+  ACKNOWLEDGED: { fg: colors.warning.dark, bg: colors.warning.light, border: colors.warning.border },
+  RESOLVED: { fg: colors.success.dark, bg: colors.success.light, border: colors.success.border },
+}
+
 export const aiReportColors = {
   READY: { fg: colors.ai.main, bg: colors.ai.light, border: colors.ai.border },
   NOT_READY: { fg: colors.neutral.dark, bg: colors.neutral.light, border: colors.neutral.border },

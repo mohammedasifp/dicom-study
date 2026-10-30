@@ -6,7 +6,9 @@ import LanguageSwitcher from '../common/LanguageSwitcher.jsx'
 import BrandMark from '../common/BrandMark.jsx'
 import { brand, colors, layout, typography } from '../../styles/tokens.js'
 
-export default function WorklistAppBar({ currentUser, refreshing, onRefresh, onHome, onLogout }) {
+const SECTIONS = ['worklist', 'operations']
+
+export default function WorklistAppBar({ currentUser, refreshing, onRefresh, onHome, section = 'worklist', onNavigate, onLogout }) {
   const { t } = useI18n()
   return (
     <Stack
@@ -26,10 +28,33 @@ export default function WorklistAppBar({ currentUser, refreshing, onRefresh, onH
         <Box sx={{ textAlign: 'left' }}>
           <Typography sx={{ fontSize: typography.size.lg, fontWeight: typography.weight.bold, letterSpacing: '0.06em', lineHeight: 1.1 }}>{t('app.name')}</Typography>
           <Typography sx={{ fontSize: typography.size.xs, color: colors.text.inverseMuted, lineHeight: 1.2, display: { xs: 'none', sm: 'block' } }}>
-            {t('worklist.title')}
+            {t(section === 'operations' ? 'ops.title' : 'worklist.title')}
           </Typography>
         </Box>
       </Box>
+
+      {onNavigate && (
+        <Stack component="nav" direction="row" spacing={0.5} sx={{ pl: { xs: 0.5, md: 2 } }}>
+          {SECTIONS.map((id) => (
+            <Button
+              key={id}
+              size="small"
+              onClick={() => onNavigate(id)}
+              aria-current={section === id ? 'page' : undefined}
+              sx={{
+                height: 32,
+                px: 1.25,
+                color: section === id ? brand.deepOceanTeal : brand.lightTeal,
+                bgcolor: section === id ? brand.softAqua : 'transparent',
+                fontWeight: typography.weight.semibold,
+                '&:hover': { bgcolor: section === id ? brand.lightTeal : 'rgba(94,234,212,0.08)' },
+              }}
+            >
+              {t(`ops.nav.${id}`)}
+            </Button>
+          ))}
+        </Stack>
+      )}
 
       <Box sx={{ flex: 1 }} />
 

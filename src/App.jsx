@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useState } from 'react'
 import LoginPage from './pages/LoginPage.jsx'
 import RadiologistWorklist from './pages/RadiologistWorklist.jsx'
+import OperationsDashboard from './pages/OperationsDashboard.jsx'
 import StateMessage from './components/common/StateMessage.jsx'
 import { useAuth } from './auth/AuthContext.js'
 import { ROUTE, navigate, parseHash, paths } from './routes.js'
@@ -35,7 +36,9 @@ function renderRoute(route, onLogout) {
   if (route.name === ROUTE.STUDY_REPORT) {
     return <ReportingScreen key={route.studyId} uid={route.studyId} onExit={() => navigate(paths.worklist())} />
   }
-  return <RadiologistWorklist onOpenStudy={(id) => navigate(paths.studyReport(id))} onHome={() => navigate(paths.worklist())} onLogout={onLogout} />
+  const shared = { onOpenStudy: (id) => navigate(paths.studyReport(id)), onHome: () => navigate(paths.worklist()), onNavigate: (section) => navigate(paths[section]()), onLogout }
+  if (route.name === ROUTE.OPERATIONS) return <OperationsDashboard {...shared} />
+  return <RadiologistWorklist {...shared} />
 }
 
 export default App

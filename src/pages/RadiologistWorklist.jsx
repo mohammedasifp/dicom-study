@@ -26,7 +26,7 @@ import { colors, layout, shadows } from '../styles/tokens.js'
 const ROWS_PER_PAGE = [25, 50, 100]
 const DEFAULT_VIEW = { queue: DEFAULT_QUEUE, filters: EMPTY_FILTERS, sort: TRIAGE_SORT, rowsPerPage: ROWS_PER_PAGE[0], advancedOpen: false }
 
-export default function RadiologistWorklist({ onOpenStudy, onHome, onLogout }) {
+export default function RadiologistWorklist({ onOpenStudy, onHome, onNavigate, onLogout }) {
   const { t } = useI18n()
   const theme = useTheme()
   // The full-width table needs ~1200px of content width; narrower screens get the card list and the queue chips.
@@ -124,7 +124,7 @@ export default function RadiologistWorklist({ onOpenStudy, onHome, onLogout }) {
 
   return (
     <Stack sx={{ height: '100%', bgcolor: 'background.default' }}>
-      <WorklistAppBar currentUser={worklist.currentUser} refreshing={worklist.refreshing} onRefresh={worklist.refresh} onHome={onHome} onLogout={onLogout} />
+      <WorklistAppBar currentUser={worklist.currentUser} refreshing={worklist.refreshing} onRefresh={worklist.refresh} onHome={onHome} section="worklist" onNavigate={onNavigate} onLogout={onLogout} />
 
       <Box sx={{ flex: 1, minHeight: 0, display: 'flex' }}>
         {showSidebar && (
