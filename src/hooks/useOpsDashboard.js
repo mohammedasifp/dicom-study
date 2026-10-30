@@ -3,6 +3,7 @@ import {
   acknowledgeException,
   assignException,
   getOpsDashboard,
+  injectFaults,
   openEventStream,
   resolveException,
 } from '../api/backend.js'
@@ -84,6 +85,7 @@ export function useOpsDashboard() {
     refreshing,
     busy,
     refresh: () => load({ background: true }),
+    inject: (types) => run('inject', () => injectFaults(types), (list) => t('ops.demo.injected', { count: list.length })),
     acknowledge: (id) => run(id, () => acknowledgeException(id), () => t('ops.done.acknowledged')),
     assign: (id, radiologistId) => run(id, () => assignException(id, radiologistId), (e) => t('ops.done.assigned', { name: e.assignee.name })),
     resolve: (id, note) => run(id, () => resolveException(id, note), () => t('ops.done.resolved')),

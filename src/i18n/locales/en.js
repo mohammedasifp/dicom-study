@@ -275,8 +275,8 @@ const en = {
       openDetail: 'Not acknowledged yet',
       critical: 'Critical',
       criticalDetail: 'Open or acknowledged',
-      unassigned: 'No owner',
-      unassignedDetail: 'Open exceptions without an owner',
+      unassigned: 'Unassigned',
+      unassignedDetail: 'Open exceptions not assigned to anyone',
       resolved: 'Resolved today',
       resolvedDetail: 'Closed by staff',
     },
@@ -287,7 +287,7 @@ const en = {
       stage: 'Impacted stage',
       elapsed: 'Elapsed',
       status: 'Status',
-      owner: 'Owner',
+      owner: 'Assigned to',
       actions: 'Actions',
     },
     elapsedSince: 'Since {{time}}, when the problem began',
@@ -295,7 +295,6 @@ const en = {
     detail: {
       whatWentWrong: 'What went wrong',
       suggested: 'Suggested next steps',
-      suggestedOwner: 'Suggested owner: {{owner}}',
       history: 'History',
       cleared: 'The system no longer detects this problem. Check it and resolve the exception.',
       resolution: 'Resolution',
@@ -308,7 +307,7 @@ const en = {
       assign: 'Assign',
       assignToMe: 'Assign to me',
       resolve: 'Resolve',
-      unassigned: 'No owner',
+      unassigned: 'Unassigned',
     },
     done: { acknowledged: 'Exception acknowledged', assigned: 'Assigned to {{name}}', resolved: 'Exception resolved' },
     resolve: {
@@ -330,6 +329,11 @@ const en = {
       title: 'No exceptions',
       active: 'Nothing needs attention right now.',
       filtered: 'No exceptions match this view.',
+    },
+    demo: {
+      inject: 'Demo: inject failures',
+      injectFive: '5 failures (missed scan, PACS, ID mismatch, not viewed, overdue)',
+      injected: { one: 'Injected {{count}} failure', other: 'Injected {{count}} failures' },
     },
     feed: {
       title: 'Live activity',

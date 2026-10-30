@@ -89,7 +89,6 @@ function ExceptionDetail({ exception, onOpenStudy }) {
             <li key={a}>{a}</li>
           ))}
         </Box>
-        <Typography sx={{ fontSize: typography.size.xs, color: colors.text.secondary }}>{t('ops.detail.suggestedOwner', { owner: exception.owner })}</Typography>
       </Box>
       <Box>
         <Typography sx={heading}>{t('ops.detail.history')}</Typography>

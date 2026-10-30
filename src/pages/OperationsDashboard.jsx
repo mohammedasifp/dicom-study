@@ -12,6 +12,7 @@ import ExceptionTable from '../components/ops/ExceptionTable.jsx'
 import ResolveDialog from '../components/ops/ResolveDialog.jsx'
 import OpsFeed from '../components/ops/OpsFeed.jsx'
 import EodSummaryDialog from '../components/ops/EodSummaryDialog.jsx'
+import DemoInjectButton from '../components/ops/DemoInjectButton.jsx'
 import { EXCEPTION_VIEWS, matchesView } from '../components/ops/opsConstants.js'
 import { colors, radius, shadows, typography } from '../styles/tokens.js'
 
@@ -80,9 +81,12 @@ export default function OperationsDashboard({ onOpenStudy, onHome, onNavigate, o
           <Typography component="h1" sx={{ fontSize: typography.size.xl, fontWeight: typography.weight.bold }}>
             {t('ops.title')}
           </Typography>
-          <Button size="small" variant="outlined" startIcon={<SummarizeRoundedIcon />} onClick={() => setSummaryOpen(true)}>
-            {t('ops.summary.open')}
-          </Button>
+          <Stack direction="row" spacing={1}>
+            {data.demoControls && <DemoInjectButton busy={ops.busy === 'inject'} onInject={ops.inject} />}
+            <Button size="small" variant="outlined" startIcon={<SummarizeRoundedIcon />} onClick={() => setSummaryOpen(true)}>
+              {t('ops.summary.open')}
+            </Button>
+          </Stack>
         </Stack>
 
         <Box sx={{ display: 'grid', gap: 1.5, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(4, minmax(0, 1fr))' } }}>
