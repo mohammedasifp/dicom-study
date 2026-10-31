@@ -48,7 +48,7 @@ const shortTitle = (text) => {
   return words.length > 38 ? `${words.slice(0, 36)}…` : words
 }
 
-function findImage(study, sopInstanceUid) {
+function findImage(study, sopInstanceUid, frame) {
   for (const [index, series] of (study.series || []).entries()) {
     const instance = series.instances.find((i) => i.sopInstanceUid === sopInstanceUid)
     if (instance) {
@@ -58,7 +58,8 @@ function findImage(study, sopInstanceUid) {
         sopInstanceUID: instance.sopInstanceUid,
         seriesNumber: series.seriesNumber ?? index + 1,
         seriesDescription: series.description || series.modality || 'Series',
-        instanceNumber: instance.instanceNumber ?? '-',
+        instanceNumber: frame ?? instance.instanceNumber ?? '-',
+        frame,
       }
     }
   }
@@ -77,7 +78,7 @@ function toSuggestion(s, study, ai) {
     text: s.aiText,
     confidence: typeof s.confidence === 'number' ? s.confidence : null,
     limitation: s.limitation || observation.limitation || null,
-    source: sourceSop ? findImage(study, sourceSop) : null,
+    source: sourceSop ? findImage(study, sourceSop, source.frame || undefined) : null,
     roi: roi
       ? { shape: roi.shape || 'rect', units: 'px', x: roi.x, y: roi.y, width: roi.width, height: roi.height, imageWidth: roi.imageWidth, imageHeight: roi.imageHeight }
       : null,

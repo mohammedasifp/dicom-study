@@ -1,5 +1,9 @@
+import { appConfig } from '../config/appConfig.js'
+
 export const wadoUrl = (source) =>
-  `/wado?requestType=WADO&studyUID=${source.studyInstanceUID}&seriesUID=${source.seriesInstanceUID}&objectUID=${source.sopInstanceUID}&contentType=image/jpeg`
+  source.frame
+    ? `${appConfig.dicomWebBasePath}/studies/${source.studyInstanceUID}/series/${source.seriesInstanceUID}/instances/${source.sopInstanceUID}/frames/${source.frame}/rendered`
+    : `/wado?requestType=WADO&studyUID=${source.studyInstanceUID}&seriesUID=${source.seriesInstanceUID}&objectUID=${source.sopInstanceUID}&contentType=image/jpeg`
 
 export function confidenceLevel(confidence) {
   if (typeof confidence !== 'number') return { label: 'Not given', color: 'none' }
