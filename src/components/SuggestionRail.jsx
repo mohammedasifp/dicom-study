@@ -9,7 +9,7 @@ import EditNoteRoundedIcon from '@mui/icons-material/EditNoteRounded'
 import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded'
 import DragIndicatorRoundedIcon from '@mui/icons-material/DragIndicatorRounded'
 import RoiThumbnail from './RoiThumbnail.jsx'
-import { confidenceLevel, confidenceText } from '../report/format.js'
+import { confidenceLevel, confidenceText, sourceLabel } from '../report/format.js'
 import { composeRoiImage, setKeyImageDrag, suggestionCaption } from '../report/keyImages.js'
 
 const GAP = 8
@@ -81,7 +81,17 @@ function DraggableEvidence({ suggestion }) {
   }, [suggestion])
 
   return (
-    <Tooltip title="Drag into the report to add as a key image" placement="left">
+    <Tooltip
+      placement="left"
+      enterDelay={250}
+      slotProps={{ tooltip: { sx: { p: 0.75, bgcolor: '#000', maxWidth: 'none' } } }}
+      title={
+        <Stack spacing={0.75}>
+          <RoiThumbnail source={suggestion.source} roi={suggestion.roi} size={380} />
+          <Typography sx={{ fontSize: '0.7rem', color: '#cbd5e1' }}>{sourceLabel(suggestion.source)} · drag into the report to add it</Typography>
+        </Stack>
+      }
+    >
       <Box
         role="img"
         aria-label={`Evidence image for #${suggestion.index}, drag into the report`}
@@ -93,7 +103,7 @@ function DraggableEvidence({ suggestion }) {
           }
           setKeyImageDrag(e, keyImage)
         }}
-        sx={{ position: 'relative', cursor: keyImage ? 'grab' : 'default', lineHeight: 0, flexShrink: 0 }}
+        sx={{ position: 'relative', cursor: keyImage ? 'grab' : 'zoom-in', lineHeight: 0, flexShrink: 0 }}
       >
         <RoiThumbnail source={suggestion.source} roi={suggestion.roi} size={72} />
         <DragIndicatorRoundedIcon sx={{ position: 'absolute', right: 1, top: 2, fontSize: 14, color: 'rgba(255,255,255,0.8)' }} />
