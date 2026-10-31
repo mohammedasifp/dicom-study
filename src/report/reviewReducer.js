@@ -15,6 +15,7 @@ export function initReview(draft) {
     activeId: draft.status === 'final' ? null : (firstPending || draft.suggestions[0] || {}).id || null,
     showingId: null,
     viewerTarget: null,
+    viewerJump: 0,
   }
 }
 
@@ -59,7 +60,7 @@ export function reviewReducer(state, action) {
     case 'setActive':
       return state.activeId === action.id ? state : { ...state, activeId: action.id }
     case 'showInViewer':
-      return { ...state, activeId: action.id, showingId: action.id, viewerTarget: action.source }
+      return { ...state, activeId: action.id, showingId: action.id, viewerTarget: action.source, viewerJump: state.viewerJump + 1 }
     default:
       return state
   }

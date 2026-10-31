@@ -118,6 +118,11 @@ export function toDraft({ study, report, ai }) {
       referringPhysician: study.referringPhysician || '-',
       status: study.status,
       sla: study.sla || null,
+      series: (study.series || []).map((s, index) => ({
+        number: s.seriesNumber ?? index + 1,
+        description: s.description || s.modality || 'Series',
+        instanceNumbers: s.instances.map((i) => i.instanceNumber).sort((a, b) => a - b),
+      })),
     },
     clinicalHistory: study.clinicalHistory || '',
     technique: study.technique || '',

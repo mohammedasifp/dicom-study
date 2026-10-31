@@ -321,6 +321,7 @@ export default function ReportingWorkspace({ uid, draft, onExit, onRerun, onSlaC
               <ViewerPane
                 study={draft.study}
                 target={review.viewerTarget}
+                jump={review.viewerJump}
                 keyImages={keyImages}
                 onCapture={(src) =>
                   setKeyImages((list) => [...list, { id: `${Date.now()}`, src, caption: `Key image ${list.length + 1}` }])

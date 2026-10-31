@@ -9,6 +9,7 @@ import { chrome } from '../theme.js'
 import { sourceLabel } from '../report/format.js'
 import { captureViewport, setKeyImageDrag } from '../report/keyImages.js'
 import { checkStudyOnPacs, viewerUrl } from '../api/pacsService.js'
+import { navigateViewer } from '../report/viewerNavigation.js'
 
 function KeyImageTray({ images, onInsert, onRemove }) {
   return (
@@ -63,10 +64,12 @@ function KeyImageTray({ images, onInsert, onRemove }) {
   )
 }
 
-export default function ViewerPane({ study, target, keyImages, onCapture, onInsertKeyImage, onRemoveKeyImage }) {
+export default function ViewerPane({ study, target, jump, keyImages, onCapture, onInsertKeyImage, onRemoveKeyImage }) {
   const [status, setStatus] = useState('checking')
   const [attempt, setAttempt] = useState(0)
   const [flash, setFlash] = useState(false)
+  const [loadedKey, setLoadedKey] = useState(null)
+  const [fallbackTarget, setFallbackTarget] = useState(null)
   const iframeRef = useRef(null)
 
   useEffect(() => {
@@ -75,7 +78,20 @@ export default function ViewerPane({ study, target, keyImages, onCapture, onInse
     return () => controller.abort()
   }, [study.studyInstanceUID, attempt])
 
-  const src = viewerUrl(study.studyInstanceUID, target)
+  const src = viewerUrl(study.studyInstanceUID, fallbackTarget)
+  const iframeKey = `${src}#${attempt}`
+  const loaded = loadedKey === iframeKey
+
+  useEffect(() => {
+    if (!target || !loaded) return undefined
+    let cancelled = false
+    navigateViewer(iframeRef.current, target, study.series || [], () => cancelled).then((found) => {
+      if (!found && !cancelled) setFallbackTarget(target)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [target, jump, loaded, study.series])
 
   const capture = () => {
     const dataUrl = captureViewport(iframeRef.current)
@@ -123,7 +139,7 @@ export default function ViewerPane({ study, target, keyImages, onCapture, onInse
           </IconButton>
         </Tooltip>
         <Tooltip title="Open viewer in a new tab">
-          <IconButton size="small" component="a" href={src} target="_blank" rel="noreferrer" sx={{ color: chrome.muted, flexShrink: 0 }}>
+          <IconButton size="small" component="a" href={viewerUrl(study.studyInstanceUID, target)} target="_blank" rel="noreferrer" sx={{ color: chrome.muted, flexShrink: 0 }}>
             <OpenInNewRoundedIcon fontSize="small" />
           </IconButton>
         </Tooltip>
@@ -135,9 +151,10 @@ export default function ViewerPane({ study, target, keyImages, onCapture, onInse
         {status === 'ready' && (
           <iframe
             ref={iframeRef}
-            key={`${src}#${attempt}`}
+            key={iframeKey}
             title="OHIF viewer"
             src={src}
+            onLoad={() => setLoadedKey(iframeKey)}
             style={{ border: 0, width: '100%', height: '100%', display: 'block' }}
           />
         )}
