@@ -220,7 +220,7 @@ export default function PrintableReport({ report }) {
             ? `Reviewed and finalized by ${report.review.reviewer} on ${formatDateTime(report.review.finalizedAt)}.`
             : 'Not yet reviewed. This document must not be used for clinical decisions.'}
         </p>
-        {final && <p style={{ fontSize: '8pt', color: '#5b6478' }}>{report.disclaimer}</p>}
+        {/* {final && <p style={{ fontSize: '8pt', color: '#5b6478' }}>{report.disclaimer}</p>} */}
         <p style={{ fontSize: '8pt', color: '#5b6478' }}>
           Exported {formatDateTime(report.exportedAt)} · Draft {report.draft.id} v{report.draft.version} · Study UID{' '}
           {report.study.studyInstanceUID}

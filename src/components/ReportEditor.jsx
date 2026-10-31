@@ -57,12 +57,38 @@ export default function ReportEditor({ initialContent, editable, statuses, activ
     editable,
     editorProps: {
       handleDrop: (view, event, _slice, moved) => {
+        if (moved || !callbacks.current.editor) return false
+
+        // 1. OS file drop (from computer)
         const files = event.dataTransfer && event.dataTransfer.files
-        if (moved || !files || !files.length || !callbacks.current.editor) return false
-        const at = view.posAtCoords({ left: event.clientX, top: event.clientY })
-        event.preventDefault()
-        insertImageFiles(callbacks.current.editor, files, at ? at.pos : undefined)
-        return true
+        if (files && files.length) {
+          const at = view.posAtCoords({ left: event.clientX, top: event.clientY })
+          event.preventDefault()
+          insertImageFiles(callbacks.current.editor, files, at ? at.pos : undefined)
+          return true
+        }
+
+        // 2. In-browser DOM/HTML drop (from KeyImageTray, SuggestionRail, OHIF, etc.)
+        const html = event.dataTransfer && event.dataTransfer.getData('text/html')
+        if (html) {
+          const parser = new DOMParser()
+          const doc = parser.parseFromString(html, 'text/html')
+          const img = doc.querySelector('img')
+          if (img && img.getAttribute('src')) {
+            event.preventDefault()
+            const at = view.posAtCoords({ left: event.clientX, top: event.clientY })
+            const src = img.getAttribute('src')
+            const imageNode = { type: 'image', attrs: { src, width: 300 } }
+            if (at && typeof at.pos === 'number') {
+              callbacks.current.editor.chain().focus().insertContentAt(at.pos, imageNode).run()
+            } else {
+              callbacks.current.editor.chain().focus().insertContent(imageNode).run()
+            }
+            return true
+          }
+        }
+
+        return false
       },
       handlePaste: (_view, event) => {
         const files = event.clipboardData && event.clipboardData.files

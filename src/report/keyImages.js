@@ -37,20 +37,13 @@ export const suggestionCaption = (suggestion) =>
 
 export function keyImageContent(image) {
   return [
-    { type: 'image', attrs: { src: image.src, alt: image.caption, width: 300 } },
-    { type: 'paragraph', content: [{ type: 'text', text: image.caption, marks: [{ type: 'italic' }] }] },
+    { type: 'image', attrs: { src: image.src, alt: '', width: 300 } },
   ]
 }
 
-const escapeAttr = (text) => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
-
 export function setKeyImageDrag(event, image) {
   event.dataTransfer.effectAllowed = 'copy'
-  event.dataTransfer.setData(
-    'text/html',
-    `<img src="${image.src}" alt="${escapeAttr(image.caption)}" width="300"><p><em>${escapeAttr(image.caption)}</em></p>`,
-  )
-  event.dataTransfer.setData('text/plain', image.caption)
+  event.dataTransfer.setData('text/html', `<img src="${image.src}" width="300">`)
 }
 
 const readAsDataUrl = (file) =>
@@ -65,7 +58,7 @@ export async function insertImageFiles(editor, files, pos) {
   const images = [...files].filter((f) => f.type.startsWith('image/'))
   for (const file of images) {
     const src = await readAsDataUrl(file)
-    const content = keyImageContent({ src, caption: file.name.replace(/\.[^.]+$/, '') })
+    const content = keyImageContent({ src })
     if (typeof pos === 'number') editor.chain().focus().insertContentAt(pos, content).run()
     else editor.chain().focus().insertContent(content).run()
   }
