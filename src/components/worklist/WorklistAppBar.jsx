@@ -1,6 +1,7 @@
 import { Avatar, Box, Button, CircularProgress, IconButton, Stack, Tooltip, Typography } from '@mui/material'
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded'
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded'
+import MenuRoundedIcon from '@mui/icons-material/MenuRounded'
 import { useI18n } from '../../i18n/I18nContext.js'
 import LanguageSwitcher from '../common/LanguageSwitcher.jsx'
 import BrandMark from '../common/BrandMark.jsx'
@@ -8,7 +9,8 @@ import { brand, colors, layout, typography } from '../../styles/tokens.js'
 
 const SECTIONS = ['worklist', 'operations']
 
-export default function WorklistAppBar({ currentUser, refreshing, onRefresh, onHome, section = 'worklist', onNavigate, onLogout }) {
+// onMenu: when given, a menu button opens the worklist views panel (screens too narrow for the left menu).
+export default function WorklistAppBar({ currentUser, refreshing, onRefresh, onHome, section = 'worklist', onNavigate, onLogout, onMenu }) {
   const { t } = useI18n()
   return (
     <Stack
@@ -17,6 +19,13 @@ export default function WorklistAppBar({ currentUser, refreshing, onRefresh, onH
       spacing={1.5}
       sx={{ alignItems: 'center', px: { xs: 1.5, md: 2.5 }, height: layout.appBarHeight, flexShrink: 0, bgcolor: brand.deepOceanTeal, color: colors.text.inverse }}
     >
+      {onMenu && (
+        <Tooltip title={t('queues.openMenu')}>
+          <IconButton size="small" onClick={onMenu} aria-label={t('queues.openMenu')} sx={{ color: brand.lightTeal, border: `1px solid ${brand.oceanTeal}` }}>
+            <MenuRoundedIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      )}
       <Box
         component="button"
         type="button"
@@ -60,9 +69,9 @@ export default function WorklistAppBar({ currentUser, refreshing, onRefresh, onH
 
       <LanguageSwitcher sx={{ '& .MuiInputBase-root': { color: colors.text.inverse, height: 32 }, '& fieldset': { borderColor: brand.oceanTeal } }} />
 
-      <Tooltip title={t('worklist.refresh')}>
+      <Tooltip title={t(section === 'operations' ? 'ops.refresh' : 'worklist.refresh')}>
         <span>
-          <IconButton size="small" onClick={onRefresh} disabled={refreshing} aria-label={t('worklist.refresh')} sx={{ color: brand.lightTeal, border: `1px solid ${brand.oceanTeal}` }}>
+          <IconButton size="small" onClick={onRefresh} disabled={refreshing} aria-label={t(section === 'operations' ? 'ops.refresh' : 'worklist.refresh')} sx={{ color: brand.lightTeal, border: `1px solid ${brand.oceanTeal}` }}>
             {refreshing ? <CircularProgress size={16} sx={{ color: brand.lightTeal }} /> : <RefreshRoundedIcon fontSize="small" />}
           </IconButton>
         </span>

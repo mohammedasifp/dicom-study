@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Box, Button, Chip, Paper, Stack, TablePagination, useMediaQuery } from '@mui/material'
+import { Box, Button, Chip, Drawer, Paper, Stack, TablePagination, useMediaQuery } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { useI18n } from '../i18n/I18nContext.js'
 import { useWorklist } from '../hooks/useWorklist.js'
@@ -32,6 +32,8 @@ export default function RadiologistWorklist({ onOpenStudy, onHome, onNavigate, o
   // The full-width table needs ~1200px of content width; narrower screens get the card list and the queue chips.
   const compact = useMediaQuery(theme.breakpoints.down(layout.worklistTableMinWidth))
   const showSidebar = useMediaQuery(theme.breakpoints.up('xl'))
+  // Below xl the left menu would squeeze the table, so it opens as a slide-out panel from the header instead.
+  const [menuOpen, setMenuOpen] = useState(false)
   const now = useNow()
   const worklist = useWorklist()
   const [view, setView] = useSessionState('svaim.worklist.view', DEFAULT_VIEW)
@@ -124,7 +126,20 @@ export default function RadiologistWorklist({ onOpenStudy, onHome, onNavigate, o
 
   return (
     <Stack sx={{ height: '100%', bgcolor: 'background.default' }}>
-      <WorklistAppBar currentUser={worklist.currentUser} refreshing={worklist.refreshing} onRefresh={worklist.refresh} onHome={onHome} section="worklist" onNavigate={onNavigate} onLogout={onLogout} />
+      <WorklistAppBar currentUser={worklist.currentUser} refreshing={worklist.refreshing} onRefresh={worklist.refresh} onHome={onHome} section="worklist" onNavigate={onNavigate} onLogout={onLogout} onMenu={showSidebar ? undefined : () => setMenuOpen(true)} />
+
+      {!showSidebar && (
+        <Drawer anchor="left" open={menuOpen} onClose={() => setMenuOpen(false)} slotProps={{ paper: { sx: { width: layout.sidebarWidth + 24 } } }}>
+          <QueueNav
+            value={view.queue}
+            counts={derived.counts}
+            onChange={(queue) => {
+              updateView({ queue })
+              setMenuOpen(false)
+            }}
+          />
+        </Drawer>
+      )}
 
       <Box sx={{ flex: 1, minHeight: 0, display: 'flex' }}>
         {showSidebar && (

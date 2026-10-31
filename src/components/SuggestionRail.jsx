@@ -86,7 +86,13 @@ function DraggableEvidence({ suggestion }) {
         role="img"
         aria-label={`Evidence image for #${suggestion.index}, drag into the report`}
         draggable={Boolean(keyImage)}
-        onDragStart={(e) => keyImage && setKeyImageDrag(e, keyImage)}
+        onDragStart={(e) => {
+          if (!keyImage) {
+            e.preventDefault()
+            return
+          }
+          setKeyImageDrag(e, keyImage)
+        }}
         sx={{ position: 'relative', cursor: keyImage ? 'grab' : 'default', lineHeight: 0, flexShrink: 0 }}
       >
         <RoiThumbnail source={suggestion.source} roi={suggestion.roi} size={72} />

@@ -56,7 +56,7 @@ export default function RerunDialog({ open, uid, modality, currentModelId, repla
         <Stack spacing={2} sx={{ pt: 0.5 }}>
           {replacesDraft && (
             <Alert severity="warning" variant="outlined" sx={{ fontSize: '0.78rem', py: 0 }}>
-              This replaces the current AI draft and its review decisions.
+              Run the AI now? When it completes, its draft replaces the current draft, including your edits and review decisions. You can roll back to the current draft once.
             </Alert>
           )}
           <TextField

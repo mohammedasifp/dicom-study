@@ -39,6 +39,7 @@ export default function RoiThumbnail({ source, roi, size = 84, compact = false }
           }}
         >
           <img
+            draggable={false}
             src={wadoUrl(source)}
             alt={`Series ${source.seriesNumber}, image ${source.instanceNumber}`}
             onError={() => setFailed(true)}

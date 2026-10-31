@@ -1,24 +1,27 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Alert, Box, Button, CircularProgress, IconButton, Snackbar, Stack, Typography } from '@mui/material'
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded'
-import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded'
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded'
 import { assignRadiologist, getReportData, getStudy, openEventStream } from '../api/backend.js'
 import { readSession } from '../auth/session.js'
 import { toDraft } from '../api/adapter.js'
+import AiProgressDialog from '../components/AiProgressDialog.jsx'
 import RerunDialog from '../components/RerunDialog.jsx'
 import ReportingWorkspace from './ReportingWorkspace.jsx'
 import { chrome } from '../theme.js'
 
-const PROCESSING = ['RECEIVED', 'AI_PROCESSING']
+function aiPhaseOf(study) {
+  if (study.status === 'AI_PROCESSING') return 'processing'
+  if (study.status === 'AI_FAILED') return 'failed'
+  return 'done'
+}
 
 async function fetchState(uid) {
   try {
     const study = await getStudy(uid)
-    if (PROCESSING.includes(study.status)) return { phase: 'processing', study }
-    if (study.status === 'AI_FAILED') return { phase: 'failed', study }
     const data = await getReportData(uid)
-    return { phase: 'ready', study, draft: toDraft({ study, report: data.report, ai: data.ai || study.ai || {} }) }
+    const ai = data.ai || study.ai || {}
+    return { phase: 'ready', aiPhase: aiPhaseOf(study), study, draft: toDraft({ study, report: data.report, ai }) }
   } catch (err) {
     return { phase: 'error', message: err.message }
   }
@@ -47,17 +50,26 @@ export default function ReportingScreen({ uid, onExit }) {
   const [state, setState] = useState({ phase: 'loading' })
   const [reloadKey, setReloadKey] = useState(0)
   const [rerunOpen, setRerunOpen] = useState(false)
+  const [watching, setWatching] = useState(false)
   const [notice, setNotice] = useState(null)
+  const aiPhase = useRef(null)
 
-  const load = useCallback(() => fetchState(uid).then(setState), [uid])
+  const apply = useCallback((next) => {
+    if (aiPhase.current === 'processing' && next.aiPhase === 'done') setReloadKey((n) => n + 1)
+    if (next.aiPhase === 'processing') setWatching(true)
+    aiPhase.current = next.aiPhase
+    setState(next)
+  }, [])
+
+  const load = useCallback(() => fetchState(uid).then(apply), [uid, apply])
 
   useEffect(() => {
     let alive = true
-    fetchState(uid).then((next) => alive && setState(next))
+    fetchState(uid).then((next) => alive && apply(next))
     return () => {
       alive = false
     }
-  }, [uid])
+  }, [uid, apply])
 
   useEffect(
     () =>
@@ -65,8 +77,10 @@ export default function ReportingScreen({ uid, onExit }) {
         AI_COMPLETED: (event) => {
           if (event.studyInstanceUid !== uid) return
           setNotice('The AI draft is ready.')
-          setReloadKey((n) => n + 1)
           load()
+        },
+        AI_FAILED: (event) => {
+          if (event.studyInstanceUid === uid) load()
         },
         REPORT_OVERDUE: (event) => {
           if (event.studyInstanceUid !== uid) return
@@ -78,10 +92,10 @@ export default function ReportingScreen({ uid, onExit }) {
   )
 
   useEffect(() => {
-    if (state.phase !== 'processing') return undefined
+    if (state.aiPhase !== 'processing') return undefined
     const timer = setInterval(load, 5000)
     return () => clearInterval(timer)
-  }, [state.phase, load])
+  }, [state.aiPhase, load])
 
   const unclaimed = Boolean(state.study && state.study.status !== 'REPORTED' && !state.study.assignedTo && !(state.study.assignment && state.study.assignment.radiologist))
   useEffect(() => {
@@ -90,20 +104,10 @@ export default function ReportingScreen({ uid, onExit }) {
     if (unclaimed && me) assignRadiologist(uid, me).catch(() => {})
   }, [uid, unclaimed])
 
-  const rerun = (
-    <RerunDialog
-      open={rerunOpen}
-      uid={uid}
-      modality={state.study && state.study.modality}
-      currentModelId={state.study && state.study.ai && state.study.ai.model && state.study.ai.model.id}
-      replacesDraft={state.phase === 'ready'}
-      onClose={() => setRerunOpen(false)}
-      onStarted={() => {
-        setRerunOpen(false)
-        setState((s) => ({ phase: 'processing', study: s.study }))
-      }}
-    />
-  )
+  const openRerun = () => {
+    setWatching(false)
+    setRerunOpen(true)
+  }
 
   const toast = (
     <Snackbar
@@ -115,78 +119,87 @@ export default function ReportingScreen({ uid, onExit }) {
     />
   )
 
-  if (state.phase === 'ready') {
+  if (state.phase !== 'ready') {
     return (
-      <>
-        <ReportingWorkspace
-          key={`${uid}-${reloadKey}`}
-          uid={uid}
-          draft={state.draft}
-          onExit={onExit}
-          onRerun={() => setRerunOpen(true)}
-          onSlaChange={(sla) => setState((s) => ({ ...s, draft: { ...s.draft, study: { ...s.draft.study, sla } } }))}
-          onReload={() => {
-            setNotice('Previous AI draft restored.')
-            load().then(() => setReloadKey((n) => n + 1))
-          }}
-        />
-        {rerun}
+      <StatusShell study={state.study} onExit={onExit}>
+        {state.phase === 'loading' && <CircularProgress size={28} />}
+        {state.phase === 'error' && (
+          <Stack spacing={1.5} sx={{ alignItems: 'center', textAlign: 'center', maxWidth: 420 }}>
+            <ErrorOutlineRoundedIcon sx={{ fontSize: 44, color: 'error.main' }} />
+            <Typography sx={{ fontWeight: 700 }}>Could not open this study</Typography>
+            <Typography sx={{ color: 'text.secondary', fontSize: '0.86rem' }}>{state.message}</Typography>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                setState({ phase: 'loading' })
+                load()
+              }}
+            >
+              Try again
+            </Button>
+          </Stack>
+        )}
         {toast}
-      </>
+      </StatusShell>
     )
   }
 
+  const ai = state.study.ai || {}
   return (
-    <StatusShell study={state.study} onExit={onExit}>
-      {state.phase === 'loading' && <CircularProgress size={28} />}
-
-      {state.phase === 'processing' && (
-        <Stack spacing={1.5} sx={{ alignItems: 'center', textAlign: 'center', maxWidth: 420 }}>
-          <Box sx={{ position: 'relative', display: 'grid', placeItems: 'center' }}>
-            <CircularProgress size={56} thickness={2.5} sx={{ color: '#8b5cf6' }} />
-            <AutoAwesomeRoundedIcon sx={{ position: 'absolute', color: '#7c3aed' }} />
-          </Box>
-          <Typography sx={{ fontWeight: 700, fontSize: '1.05rem' }}>The AI is analysing this study</Typography>
-          <Typography sx={{ color: 'text.secondary', fontSize: '0.86rem' }}>
-            {state.study.ai && state.study.ai.requestedModel ? `Model: ${state.study.ai.requestedModel}. ` : ''}
-            The draft report opens here automatically when it is ready.
-          </Typography>
-        </Stack>
-      )}
-
-      {state.phase === 'failed' && (
-        <Stack spacing={1.5} sx={{ alignItems: 'center', textAlign: 'center', maxWidth: 460 }}>
-          <ErrorOutlineRoundedIcon sx={{ fontSize: 44, color: 'error.main' }} />
-          <Typography sx={{ fontWeight: 700, fontSize: '1.05rem' }}>The AI analysis failed</Typography>
-          {state.study.ai && state.study.ai.error && (
-            <Alert severity="error" variant="outlined" sx={{ textAlign: 'left', width: '100%' }}>
-              {state.study.ai.error}
-            </Alert>
-          )}
-          <Button variant="contained" onClick={() => setRerunOpen(true)}>
-            Run the AI again
-          </Button>
-        </Stack>
-      )}
-
-      {state.phase === 'error' && (
-        <Stack spacing={1.5} sx={{ alignItems: 'center', textAlign: 'center', maxWidth: 420 }}>
-          <ErrorOutlineRoundedIcon sx={{ fontSize: 44, color: 'error.main' }} />
-          <Typography sx={{ fontWeight: 700 }}>Could not open this study</Typography>
-          <Typography sx={{ color: 'text.secondary', fontSize: '0.86rem' }}>{state.message}</Typography>
-          <Button
-            variant="outlined"
-            onClick={() => {
-              setState({ phase: 'loading' })
-              load()
-            }}
+    <>
+      <Stack sx={{ height: '100%' }}>
+        {state.aiPhase === 'failed' && !watching && (
+          <Alert
+            className="no-print"
+            severity={ai.failureReason === 'OUT_OF_SCOPE' ? 'warning' : 'error'}
+            sx={{ borderRadius: 0, py: 0, flexShrink: 0 }}
+            action={
+              <Button color="inherit" size="small" onClick={openRerun}>
+                Run the AI again
+              </Button>
+            }
           >
-            Try again
-          </Button>
-        </Stack>
-      )}
-      {rerun}
+            {ai.failureReason === 'OUT_OF_SCOPE' ? 'The AI declined the instruction' : 'AI analysis failed'}
+            {ai.error ? `: ${ai.error}` : ''}. You can report manually.
+          </Alert>
+        )}
+        <Box sx={{ flex: 1, minHeight: 0 }}>
+          <ReportingWorkspace
+            key={`${uid}-${reloadKey}`}
+            uid={uid}
+            draft={state.draft}
+            onExit={onExit}
+            onRerun={openRerun}
+            onSlaChange={(sla) => setState((s) => ({ ...s, draft: { ...s.draft, study: { ...s.draft.study, sla } } }))}
+            onReload={() => {
+              setNotice('Previous AI draft restored.')
+              load().then(() => setReloadKey((n) => n + 1))
+            }}
+          />
+        </Box>
+      </Stack>
+      <AiProgressDialog
+        open={watching && state.aiPhase !== 'done'}
+        phase={state.aiPhase}
+        ai={ai}
+        onClose={() => setWatching(false)}
+        onRerun={openRerun}
+      />
+      <RerunDialog
+        open={rerunOpen}
+        uid={uid}
+        modality={state.study.modality}
+        currentModelId={ai.model && ai.model.id}
+        replacesDraft
+        onClose={() => setRerunOpen(false)}
+        onStarted={() => {
+          setRerunOpen(false)
+          setWatching(true)
+          aiPhase.current = 'processing'
+          setState((s) => ({ ...s, aiPhase: 'processing', study: { ...s.study, status: 'AI_PROCESSING', ai: {} } }))
+        }}
+      />
       {toast}
-    </StatusShell>
+    </>
   )
 }

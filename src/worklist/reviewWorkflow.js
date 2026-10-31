@@ -22,12 +22,6 @@ export function reportAction(study) {
   return study.aiReportStatus === AI.READY ? REPORT_ACTION.VIEW_EDIT : REPORT_ACTION.MANUAL
 }
 
-// Assignment never changes the review status; finalized studies are locked.
-export function applyAssignment(study, radiologistId) {
-  if (isFinalized(study)) return study
-  return { ...study, assignedTo: radiologistId || null }
-}
-
 // Opening the report claims an unassigned study and starts the review. Studies owned by someone else are left untouched.
 export function applyStartReview(study, userId) {
   if (isFinalized(study) || (study.assignedTo && study.assignedTo !== userId)) return study

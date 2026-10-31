@@ -5,7 +5,6 @@ import {
   Collapse,
   Divider,
   IconButton,
-  Link,
   Menu,
   MenuItem,
   Stack,
@@ -21,10 +20,14 @@ import {
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded'
 import KeyboardArrowUpRoundedIcon from '@mui/icons-material/KeyboardArrowUpRounded'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
+import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined'
+import ChecklistRoundedIcon from '@mui/icons-material/ChecklistRounded'
+import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded'
+import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded'
 import { useI18n } from '../../i18n/I18nContext.js'
 import { formatDuration, formatTime } from '../../i18n/format.js'
 import Pill from '../common/Pill.jsx'
-import { colors, exceptionStatusColors, severityColors, table, typography } from '../../styles/tokens.js'
+import { brand, colors, exceptionStatusColors, radius, severityColors, table, typography } from '../../styles/tokens.js'
 
 const minutesBetween = (from, to) => (new Date(to) - new Date(from)) / 60000
 
@@ -59,50 +62,108 @@ function AssignButton({ exception, radiologists, currentUserId, disabled, onAssi
   )
 }
 
+// One titled card in the expanded detail panel.
+function DetailCard({ icon, title, accent, children }) {
+  return (
+    <Box
+      sx={{
+        bgcolor: 'background.paper',
+        border: `1px solid ${table.gridLine}`,
+        borderLeft: accent ? `4px solid ${accent}` : `1px solid ${table.gridLine}`,
+        borderRadius: `${radius.md}px`,
+        overflow: 'hidden',
+        minWidth: 0,
+      }}
+    >
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', px: 1.5, py: 1, bgcolor: colors.background.subtle, borderBottom: `1px solid ${table.gridLine}` }}>
+        <Box sx={{ display: 'inline-flex', color: accent || colors.text.secondary, '& svg': { fontSize: 18 } }}>{icon}</Box>
+        <Typography sx={{ fontSize: typography.size.xs, fontWeight: typography.weight.bold, color: colors.text.secondary, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          {title}
+        </Typography>
+      </Stack>
+      <Box sx={{ p: 1.5 }}>{children}</Box>
+    </Box>
+  )
+}
+
 function ExceptionDetail({ exception, onOpenStudy }) {
   const { t, intlLocale } = useI18n()
-  const heading = { fontSize: typography.size.xs, fontWeight: typography.weight.bold, color: colors.text.secondary, textTransform: 'uppercase', letterSpacing: '0.04em', mb: 0.5 }
+  const body = { fontSize: typography.size.sm, lineHeight: 1.55 }
   return (
-    <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', lg: '1.2fr 1.2fr 1fr' }, p: 2, bgcolor: colors.background.subtle }}>
-      <Box>
-        <Typography sx={heading}>{t('ops.detail.whatWentWrong')}</Typography>
-        <Typography sx={{ fontSize: typography.size.sm }}>{exception.detail}</Typography>
+    <Box
+      sx={{
+        display: 'grid',
+        gap: 1.5,
+        gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.2fr) minmax(0, 1.3fr) minmax(0, 0.9fr)' },
+        alignItems: 'start',
+        p: 2,
+        pl: { lg: 7 },
+        bgcolor: colors.background.app,
+        boxShadow: `inset 3px 0 0 ${severityColors[exception.severity].bar}`,
+      }}
+    >
+      <DetailCard icon={<ReportProblemOutlinedIcon />} title={t('ops.detail.whatWentWrong')} accent={severityColors[exception.severity].bar}>
+        <Typography sx={body}>{exception.detail}</Typography>
         {exception.clearedAt && exception.status !== 'RESOLVED' && (
           <Typography sx={{ mt: 1, fontSize: typography.size.xs, color: colors.success.dark }}>{t('ops.detail.cleared')}</Typography>
         )}
-        {exception.ref.kind === 'study' && (
-          <Link component="button" type="button" onClick={() => onOpenStudy(exception.ref.id)} sx={{ mt: 1, fontSize: typography.size.sm }}>
-            {t('ops.detail.openStudy')}
-          </Link>
-        )}
         {exception.resolutionNote && (
-          <Box sx={{ mt: 1.5 }}>
-            <Typography sx={heading}>{t('ops.detail.resolution')}</Typography>
-            <Typography sx={{ fontSize: typography.size.sm }}>{exception.resolutionNote}</Typography>
+          <Box sx={{ mt: 1.5, p: 1, borderRadius: `${radius.sm}px`, bgcolor: colors.success.light, border: `1px solid ${colors.success.border}` }}>
+            <Typography sx={{ fontSize: typography.size.xs, fontWeight: typography.weight.bold, color: colors.success.dark, mb: 0.25 }}>{t('ops.detail.resolution')}</Typography>
+            <Typography sx={body}>{exception.resolutionNote}</Typography>
           </Box>
         )}
-      </Box>
-      <Box>
-        <Typography sx={heading}>{t('ops.detail.suggested')}</Typography>
-        <Box component="ol" sx={{ m: 0, pl: 2.5, fontSize: typography.size.sm, '& li': { mb: 0.5 } }}>
-          {exception.actions.map((a) => (
-            <li key={a}>{a}</li>
-          ))}
-        </Box>
-      </Box>
-      <Box>
-        <Typography sx={heading}>{t('ops.detail.history')}</Typography>
-        <Stack spacing={0.5}>
-          {exception.history.map((h) => (
-            <Typography key={`${h.action}-${h.at}`} sx={{ fontSize: typography.size.xs }}>
-              <Box component="span" sx={{ color: colors.text.muted, fontVariantNumeric: 'tabular-nums', mr: 1 }}>
-                {formatTime(h.at, intlLocale)}
+        {exception.ref.kind === 'study' && (
+          <Button size="small" variant="outlined" startIcon={<OpenInNewRoundedIcon />} onClick={() => onOpenStudy(exception.ref.id)} sx={{ mt: 1.5 }}>
+            {t('ops.detail.openStudy')}
+          </Button>
+        )}
+      </DetailCard>
+
+      <DetailCard icon={<ChecklistRoundedIcon />} title={t('ops.detail.suggested')}>
+        <Stack component="ol" spacing={1} sx={{ m: 0, p: 0, listStyle: 'none' }}>
+          {exception.actions.map((a, i) => (
+            <Stack component="li" key={a} direction="row" spacing={1.25} sx={{ alignItems: 'flex-start' }}>
+              <Box
+                sx={{
+                  flexShrink: 0,
+                  width: 22,
+                  height: 22,
+                  mt: '1px',
+                  borderRadius: '50%',
+                  display: 'grid',
+                  placeItems: 'center',
+                  fontSize: typography.size.xs,
+                  fontWeight: typography.weight.bold,
+                  color: brand.deepOceanTeal,
+                  bgcolor: brand.mintWhite,
+                  border: `1px solid ${brand.softAqua}`,
+                }}
+              >
+                {i + 1}
               </Box>
-              {t(`ops.history.${h.action}`, { by: h.by, note: h.note })}
-            </Typography>
+              <Typography sx={body}>{a}</Typography>
+            </Stack>
           ))}
         </Stack>
-      </Box>
+      </DetailCard>
+
+      <DetailCard icon={<HistoryRoundedIcon />} title={t('ops.detail.history')}>
+        <Stack spacing={0}>
+          {exception.history.map((h, i) => (
+            <Stack key={`${h.action}-${h.at}`} direction="row" spacing={1.25} sx={{ alignItems: 'stretch' }}>
+              <Stack sx={{ alignItems: 'center', pt: '6px' }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: i === exception.history.length - 1 ? brand.oceanTeal : colors.border.strong, flexShrink: 0 }} />
+                {i < exception.history.length - 1 && <Box sx={{ flex: 1, width: '1px', bgcolor: table.gridLine, my: 0.5 }} />}
+              </Stack>
+              <Box sx={{ pb: i < exception.history.length - 1 ? 1.25 : 0, minWidth: 0 }}>
+                <Typography sx={{ fontSize: typography.size.xs, color: colors.text.muted, fontVariantNumeric: 'tabular-nums' }}>{formatTime(h.at, intlLocale)}</Typography>
+                <Typography sx={{ fontSize: typography.size.sm }}>{t(`ops.history.${h.action}`, { by: h.by, note: h.note })}</Typography>
+              </Box>
+            </Stack>
+          ))}
+        </Stack>
+      </DetailCard>
     </Box>
   )
 }
@@ -110,8 +171,26 @@ function ExceptionDetail({ exception, onOpenStudy }) {
 export default function ExceptionTable({ exceptions, now, radiologists, currentUserId, busy, onAcknowledge, onAssign, onResolve, onOpenStudy }) {
   const { t, intlLocale } = useI18n()
   const [expanded, setExpanded] = useState(null)
-  const head = { bgcolor: table.headerBg, color: table.headerText, fontSize: typography.size.xs, fontWeight: typography.weight.semibold, whiteSpace: 'nowrap', py: 1 }
-  const cell = { fontSize: typography.size.sm, py: 1, verticalAlign: 'middle' }
+  // Grid lines match the worklist table (styles/tokens.js `table`): row and column separators, none after the last column.
+  const head = {
+    bgcolor: table.headerBg,
+    color: table.headerText,
+    fontSize: typography.size.xs,
+    fontWeight: typography.weight.semibold,
+    whiteSpace: 'nowrap',
+    py: 1,
+    borderBottom: 0,
+    borderRight: `1px solid ${table.headerGridLine}`,
+    '&:last-of-type': { borderRight: 0 },
+  }
+  const cell = {
+    fontSize: typography.size.sm,
+    py: 1,
+    verticalAlign: 'middle',
+    borderBottom: `1px solid ${table.gridLine}`,
+    borderRight: `1px solid ${table.gridLine}`,
+    '&:last-of-type': { borderRight: 0 },
+  }
 
   return (
     <TableContainer sx={{ overflowX: 'auto' }}>
@@ -137,9 +216,9 @@ export default function ExceptionTable({ exceptions, now, radiologists, currentU
             return (
               <Fragment key={e.id}>
                 <TableRow
-                  hover
                   sx={{
                     '& > td': { borderBottom: open ? 0 : undefined },
+                    '&:hover': { bgcolor: table.rowHoverBg },
                     boxShadow: `inset 3px 0 0 ${resolved ? 'transparent' : severityColors[e.severity].bar}`,
                     opacity: resolved ? 0.75 : 1,
                   }}
@@ -208,7 +287,7 @@ export default function ExceptionTable({ exceptions, now, radiologists, currentU
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell colSpan={9} sx={{ p: 0, borderBottom: open ? undefined : 0 }}>
+                  <TableCell colSpan={9} sx={{ p: 0, borderBottom: open ? `1px solid ${table.gridLine}` : 0 }}>
                     <Collapse in={open} unmountOnExit>
                       <ExceptionDetail exception={e} onOpenStudy={onOpenStudy} />
                     </Collapse>

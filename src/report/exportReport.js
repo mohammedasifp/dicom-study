@@ -5,6 +5,10 @@ export const DISCLAIMER =
 
 export const DISCLAIMER_SHORT = 'AI-assisted draft · not a diagnosis · must be reviewed by a qualified radiologist'
 
+export const NO_AI_DISCLAIMER = 'AI analysis failed for this study. The radiologist wrote this report without an AI draft.'
+
+export const NO_AI_DISCLAIMER_SHORT = 'AI analysis failed · report written by the radiologist without an AI draft'
+
 const blockText = (block) => {
   if (block.runs) return block.runs.map((r) => r.text).join('')
   if (block.rows) return block.rows.map((row) => row.map((c) => c.text).join(' | ')).join('\n')
@@ -41,10 +45,11 @@ export function buildStructuredReport({ draft, review, editor, events = [] }) {
   const scans = editor ? scanSuggestions(editor.state.doc) : {}
 
   const final = Boolean(review.finalized)
+  const aiDraft = Boolean(draft.model && draft.model.id)
   return {
     reportType: final ? 'FINAL_REVIEWED_DRAFT' : 'AI_DRAFT_UNDER_REVIEW',
-    label: final ? 'Final Reviewed Draft' : 'AI Draft (under review)',
-    disclaimer: DISCLAIMER,
+    label: final ? 'Final Reviewed Draft' : aiDraft ? 'AI Draft (under review)' : 'Draft (under review)',
+    disclaimer: aiDraft ? DISCLAIMER : NO_AI_DISCLAIMER,
     exportedAt: new Date().toISOString(),
     draft: { id: draft.draftId, version: draft.version, generatedAt: draft.generatedAt },
     model: draft.model,

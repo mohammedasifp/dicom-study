@@ -17,6 +17,8 @@ export default function StagePipeline({ stages, activeStage, onSelectStage }) {
               aria-pressed={active}
               sx={{
                 flex: 1,
+                minWidth: 0,
+                alignSelf: 'stretch',
                 display: 'block',
                 textAlign: 'left',
                 p: 1.5,
@@ -29,31 +31,19 @@ export default function StagePipeline({ stages, activeStage, onSelectStage }) {
                 '&:focus-visible': { outline: `2px solid ${colors.border.focus}`, outlineOffset: 2 },
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 1 }}>
-                <Typography sx={{ fontSize: typography.size.sm, fontWeight: typography.weight.semibold }}>{t(`ops.stage.${s.stage}`)}</Typography>
-                {alert && (
-                  <Box
-                    component="span"
-                    sx={{
-                      px: 0.75,
-                      borderRadius: `${radius.pill}px`,
-                      bgcolor: colors.danger.main,
-                      color: colors.text.inverse,
-                      fontSize: typography.size.xs,
-                      fontWeight: typography.weight.bold,
-                      lineHeight: '18px',
-                    }}
-                    title={t('ops.stageProblems', { count: s.openExceptions })}
-                  >
-                    {s.openExceptions}
-                  </Box>
-                )}
+              <Typography sx={{ fontSize: typography.size.sm, fontWeight: typography.weight.semibold }}>{t(`ops.stage.${s.stage}`)}</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.75 }}>
+                <Typography
+                  sx={{ fontSize: typography.size.xxl, fontWeight: typography.weight.bold, lineHeight: 1.2, fontVariantNumeric: 'tabular-nums', color: alert ? colors.danger.main : 'text.primary' }}
+                >
+                  {s.openExceptions || 0}
+                </Typography>
+                <Typography sx={{ fontSize: typography.size.xs, color: alert ? colors.danger.main : colors.text.secondary }}>
+                  {t('ops.stageExceptions', { count: s.openExceptions || 0 })}
+                </Typography>
               </Box>
-              <Typography sx={{ fontSize: typography.size.xxl, fontWeight: typography.weight.bold, lineHeight: 1.2, fontVariantNumeric: 'tabular-nums' }}>
-                {s.count}
-              </Typography>
-              <Typography noWrap sx={{ fontSize: typography.size.xs, color: colors.text.secondary }}>
-                {t(`ops.stageHint.${s.stage}`)}
+              <Typography sx={{ fontSize: typography.size.xs, color: colors.text.secondary }}>
+                {t('ops.stageCases', { count: s.count })} · {t(`ops.stageHint.${s.stage}`)}
               </Typography>
             </ButtonBase>
             {index < stages.length - 1 && <ChevronRightRoundedIcon sx={{ color: colors.text.muted, flexShrink: 0 }} />}
