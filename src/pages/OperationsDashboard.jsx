@@ -8,6 +8,7 @@ import { errorMessageKey } from '../api/errors.js'
 import WorklistAppBar from '../components/worklist/WorklistAppBar.jsx'
 import StateMessage from '../components/common/StateMessage.jsx'
 import StagePipeline from '../components/ops/StagePipeline.jsx'
+import StagePatients from '../components/ops/StagePatients.jsx'
 import ExceptionTable from '../components/ops/ExceptionTable.jsx'
 import ResolveDialog from '../components/ops/ResolveDialog.jsx'
 import OpsFeed from '../components/ops/OpsFeed.jsx'
@@ -54,8 +55,8 @@ export default function OperationsDashboard({ onOpenStudy, onHome, onNavigate, o
   const data = ops.data
 
   const rows = useMemo(
-    () => (data ? data.exceptions.filter((e) => matchesView(e, view) && (!stage || e.caseStage === stage)) : []),
-    [data, view, stage],
+    () => (data ? data.exceptions.filter((e) => matchesView(e, view)) : []),
+    [data, view],
   )
 
   let content
@@ -98,6 +99,8 @@ export default function OperationsDashboard({ onOpenStudy, onHome, onNavigate, o
 
         <StagePipeline stages={data.stages} activeStage={stage} onSelectStage={setStage} />
 
+        {stage && <StagePatients stage={stage} now={now} refreshKey={data} onClose={() => setStage(null)} onOpenStudy={onOpenStudy} />}
+
         <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', xl: 'minmax(0, 1fr) 320px' }, alignItems: 'start' }}>
           <Paper sx={{ border: 1, borderColor: 'divider', boxShadow: shadows.card, overflow: 'clip' }}>
             <Stack direction="row" spacing={1} useFlexGap sx={{ p: 1.5, flexWrap: 'wrap', alignItems: 'center', borderBottom: 1, borderColor: 'divider' }}>
@@ -111,9 +114,6 @@ export default function OperationsDashboard({ onOpenStudy, onHome, onNavigate, o
                   onClick={() => setView(v)}
                 />
               ))}
-              {stage && (
-                <Chip size="small" color="secondary" label={t('ops.stageFilter', { stage: t(`ops.stage.${stage}`) })} onDelete={() => setStage(null)} />
-              )}
             </Stack>
             {rows.length ? (
               <ExceptionTable
@@ -128,7 +128,7 @@ export default function OperationsDashboard({ onOpenStudy, onHome, onNavigate, o
                 onOpenStudy={onOpenStudy}
               />
             ) : (
-              <StateMessage title={t('ops.empty.title')} description={t(view === 'active' && !stage ? 'ops.empty.active' : 'ops.empty.filtered')} />
+              <StateMessage title={t('ops.empty.title')} description={t(view === 'active' ? 'ops.empty.active' : 'ops.empty.filtered')} />
             )}
           </Paper>
           <OpsFeed feed={data.feed} />

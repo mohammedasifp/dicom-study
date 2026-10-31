@@ -43,7 +43,7 @@ export default function StagePipeline({ stages, activeStage, onSelectStage }) {
                       fontWeight: typography.weight.bold,
                       lineHeight: '18px',
                     }}
-                    title={t('ops.stageFilter', { stage: t(`ops.stage.${s.stage}`) })}
+                    title={t('ops.stageProblems', { count: s.openExceptions })}
                   >
                     {s.openExceptions}
                   </Box>

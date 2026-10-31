@@ -51,6 +51,8 @@ export const getOpsDashboard = () => request('GET', '/api/ops/dashboard')
 
 export const getOpsSummary = () => request('GET', '/api/ops/summary')
 
+export const getStagePatients = (stage) => request('GET', `/api/ops/stages/${enc(stage)}`)
+
 export const injectFaults = (types) => request('POST', '/api/ops/simulation/inject', { types })
 
 export const acknowledgeException = (id) => request('POST', `/api/ops/exceptions/${enc(id)}/acknowledge`)
