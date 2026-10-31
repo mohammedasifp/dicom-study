@@ -6,10 +6,10 @@ import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined
 import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined'
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
 import { chrome } from '../theme.js'
-import { sourceLabel } from '../report/format.js'
+import { roiFraction, sourceLabel } from '../report/format.js'
 import { captureViewport, setKeyImageDrag } from '../report/keyImages.js'
 import { checkStudyOnPacs, viewerUrl } from '../api/pacsService.js'
-import { navigateViewer } from '../report/viewerNavigation.js'
+import { imageRect, navigateViewer } from '../report/viewerNavigation.js'
 
 function KeyImageTray({ images, onInsert, onRemove }) {
   return (
@@ -64,12 +64,13 @@ function KeyImageTray({ images, onInsert, onRemove }) {
   )
 }
 
-export default function ViewerPane({ study, target, jump, keyImages, onCapture, onInsertKeyImage, onRemoveKeyImage }) {
+export default function ViewerPane({ study, target, jump, roi, keyImages, onCapture, onInsertKeyImage, onRemoveKeyImage }) {
   const [status, setStatus] = useState('checking')
   const [attempt, setAttempt] = useState(0)
   const [flash, setFlash] = useState(false)
   const [loadedKey, setLoadedKey] = useState(null)
   const [fallbackTarget, setFallbackTarget] = useState(null)
+  const [highlight, setHighlight] = useState(null)
   const iframeRef = useRef(null)
 
   useEffect(() => {
@@ -85,13 +86,33 @@ export default function ViewerPane({ study, target, jump, keyImages, onCapture, 
   useEffect(() => {
     if (!target || !loaded) return undefined
     let cancelled = false
-    navigateViewer(iframeRef.current, target, study.series || [], () => cancelled).then((found) => {
-      if (!found && !cancelled) setFallbackTarget(target)
+    let stopWatching = () => {}
+    const iframe = iframeRef.current
+    navigateViewer(iframe, target, study.series || [], () => cancelled).then((found) => {
+      if (cancelled) return
+      if (!found) return setFallbackTarget(target)
+      const rect = roi && imageRect(iframe, roi)
+      const region = rect && roiFraction(roi)
+      if (!region) return
+      setHighlight({ rect, region })
+      const doc = iframe.contentDocument
+      const hide = (event) => event.isTrusted !== false && setHighlight(null)
+      const events = ['wheel', 'pointerdown', 'keydown', 'touchstart']
+      events.forEach((name) => doc.addEventListener(name, hide, true))
+      let observed = false
+      const resize = new ResizeObserver(() => (observed ? setHighlight(null) : (observed = true)))
+      resize.observe(iframe)
+      stopWatching = () => {
+        events.forEach((name) => doc.removeEventListener(name, hide, true))
+        resize.disconnect()
+      }
     })
     return () => {
       cancelled = true
+      stopWatching()
+      setHighlight(null)
     }
-  }, [target, jump, loaded, study.series])
+  }, [target, jump, roi, loaded, study.series])
 
   const capture = () => {
     const dataUrl = captureViewport(iframeRef.current)
@@ -157,6 +178,28 @@ export default function ViewerPane({ study, target, jump, keyImages, onCapture, 
             onLoad={() => setLoadedKey(iframeKey)}
             style={{ border: 0, width: '100%', height: '100%', display: 'block' }}
           />
+        )}
+        {highlight && (
+          <svg aria-label="AI region" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+            <ellipse
+              cx={highlight.rect.left + (highlight.region.x + highlight.region.width / 2) * highlight.rect.width}
+              cy={highlight.rect.top + (highlight.region.y + highlight.region.height / 2) * highlight.rect.height}
+              rx={(highlight.region.width / 2) * highlight.rect.width}
+              ry={(highlight.region.height / 2) * highlight.rect.height}
+              fill="rgba(250,204,21,0.12)"
+              stroke="#facc15"
+              strokeWidth={2}
+            />
+            <text
+              x={highlight.rect.left + highlight.region.x * highlight.rect.width}
+              y={Math.max(12, highlight.rect.top + highlight.region.y * highlight.rect.height - 6)}
+              fill="#facc15"
+              fontSize={12}
+              fontWeight={600}
+            >
+              AI region
+            </text>
+          </svg>
         )}
         {flash && <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(255,255,255,0.35)', pointerEvents: 'none' }} />}
         {status === 'checking' && (

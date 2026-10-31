@@ -95,6 +95,18 @@ function positionInSeries(target, studySeries) {
   return index + 1
 }
 
+export function imageRect(iframe, roi) {
+  const doc = iframe && iframe.contentDocument
+  const wrapper = doc && doc.querySelector('.viewport-wrapper')
+  const element = wrapper && wrapper.querySelector('.viewport-element')
+  const aspect = roi.imageWidth && roi.imageHeight ? roi.imageWidth / roi.imageHeight : null
+  if (!element || !aspect) return null
+  const box = element.getBoundingClientRect()
+  const width = box.width / box.height > aspect ? box.height * aspect : box.width
+  const height = width / aspect
+  return { left: box.left + (box.width - width) / 2, top: box.top + (box.height - height) / 2, width, height }
+}
+
 export async function navigateViewer(iframe, target, studySeries, isCancelled) {
   if (!(await showSeries(iframe, target, studySeries, isCancelled))) return false
   const position = positionInSeries(target, studySeries)

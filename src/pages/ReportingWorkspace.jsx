@@ -145,7 +145,7 @@ export default function ReportingWorkspace({ uid, draft, onExit, onRerun, onSlaC
 
   function openInViewer(s) {
     if (!s || !s.source) return
-    dispatch({ type: 'showInViewer', id: s.id, source: s.source })
+    dispatch({ type: 'showInViewer', id: s.id, source: s.source, roi: s.roi })
     if (layout === 'report') changeLayout('split')
   }
 
@@ -322,6 +322,7 @@ export default function ReportingWorkspace({ uid, draft, onExit, onRerun, onSlaC
                 study={draft.study}
                 target={review.viewerTarget}
                 jump={review.viewerJump}
+                roi={review.viewerRoi}
                 keyImages={keyImages}
                 onCapture={(src) =>
                   setKeyImages((list) => [...list, { id: `${Date.now()}`, src, caption: `Key image ${list.length + 1}` }])
